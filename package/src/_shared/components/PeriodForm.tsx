@@ -6,7 +6,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { CreatePeriodRequestSchema, CreatePeriodRequest } from "@/_models/period.model";
 import { usePeriodStore } from "@/_store/period.store";
 
-export default function PeriodForm() {
+interface PeriodFormProps {
+    onCancel?: () => void;
+}
+
+export default function PeriodForm({ onCancel }: PeriodFormProps) {
   const { add } = usePeriodStore();
 
     const { register, handleSubmit, formState: { errors } } = useForm<CreatePeriodRequest>({
@@ -16,13 +20,13 @@ export default function PeriodForm() {
             year: new Date().getFullYear(),
             total: 0,
             closed: false,
-            active: true,
         },
     });
 
     const onSubmit = async (data: CreatePeriodRequest) => {
         try {
             await add(data);
+            onCancel?.();
         } catch (error) {
             console.error("Failed to create period:", error);
         }
@@ -50,15 +54,16 @@ export default function PeriodForm() {
                     <input type="checkbox" {...register("closed")} className="form-checkbox" />
                     Closed
                 </label>
-                <label className="flex items-center gap-2">
-                    <input type="checkbox" {...register("active")} className="form-checkbox" />
-                    Active
-                </label>
             </div>
-            <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
-                <Plus className="size-5 inline-block mr-2" />
-                Create Period
-            </button>
+            <div className="flex gap-2">
+                <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                    <Plus className="size-5 inline-block mr-2" />
+                    Create Period
+                </button>
+                <button type="button" onClick={() => onCancel?.()} className="px-4 py-2 bg-zinc-200 text-zinc-700 rounded-md hover:bg-zinc-300 transition-colors">
+                    Cancel
+                </button>
+            </div>
         </form>
     );
 }

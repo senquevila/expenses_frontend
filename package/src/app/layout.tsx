@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { AppLayout } from "@/_shared/components/AppLayout";
+import { Toaster } from "@/_libs/ui/sonner";
 import "@/styles/index.css";
 
 export const metadata: Metadata = {
@@ -16,6 +17,7 @@ export default function RootLayout({
     <html lang="en">
       <body className="antialiased">
         <AppLayout>{children}</AppLayout>
+        <Toaster />
       </body>
     </html>
   );

@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { toast } from 'sonner';
 import { Period } from '@/_models/period.model';
 import { periodService } from '@/_services/period.service';
 
@@ -25,8 +26,8 @@ export const usePeriodStore = create<PeriodState>((set) => ({
         try {
             const data = await periodService.getAll();
             set({ periods: data });
-        } catch (error) {
-            set({ error: 'Failed to fetch periods' });
+        } catch {
+            toast.error('Failed to fetch periods');
         } finally {
             set({ loading: false });
         }
@@ -37,8 +38,9 @@ export const usePeriodStore = create<PeriodState>((set) => ({
         try {
             const newPeriod = await periodService.create(data);
             set((state) => ({ periods: [...state.periods, newPeriod] }));
-        } catch (error) {
-            set({ error: 'Failed to add period' });
+            toast.success('Period created');
+        } catch {
+            toast.error('Failed to add period');
         } finally {
             set({ loading: false });
         }
@@ -47,12 +49,13 @@ export const usePeriodStore = create<PeriodState>((set) => ({
     toggle: async (id) => {
         set({ loading: true, error: null });
         try {
-            const updated = await periodService.toggle(id);
+            const closed = await periodService.toggle(id);
             set((state) => ({
-                periods: state.periods.map((p) => (p.id === id ? updated : p)),
+                periods: state.periods.map((p) => (p.id === id ? { ...p, closed } : p)),
             }));
-        } catch (error) {
-            set({ error: 'Failed to toggle period' });
+            toast.success('Period updated');
+        } catch {
+            toast.error('Failed to toggle period');
         } finally {
             set({ loading: false });
         }
@@ -65,8 +68,9 @@ export const usePeriodStore = create<PeriodState>((set) => ({
             set((state) => ({
                 periods: state.periods.map((p) => (p.id === id ? updated : p)),
             }));
-        } catch (error) {
-            set({ error: 'Failed to edit period' });
+            toast.success('Period updated');
+        } catch {
+            toast.error('Failed to edit period');
         } finally {
             set({ loading: false });
         }
@@ -79,8 +83,9 @@ export const usePeriodStore = create<PeriodState>((set) => ({
             set((state) => ({
                 periods: state.periods.filter((p) => p.id !== id),
             }));
-        } catch (error) {
-            set({ error: 'Failed to delete period' });
+            toast.success('Period deleted');
+        } catch {
+            toast.error('Failed to delete period');
         } finally {
             set({ loading: false });
         }
