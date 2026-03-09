@@ -7,13 +7,13 @@ import { usePeriodStore } from "@/_store/period.store";
 
 export default function Periods() {
   const { periods, fetchAll, loading, error, toggle } = usePeriodStore();
-  const [filter, setFilter] = useState<"all" | "active">("all");
+  const [filter, setFilter] = useState<"all" | "closed">("all");
 
   useEffect(() => {
     fetchAll();
   }, [fetchAll]);
 
-  const filtered = filter === "active" ? periods.filter((p) => p.active) : periods;
+  const filtered = filter === "closed" ? periods.filter((p) => p.closed) : periods;
 
   if (loading) return <div className="p-8">Loading...</div>;
   if (error) return <div className="p-8 text-red-500">{error}</div>;
@@ -47,7 +47,7 @@ export default function Periods() {
                   <Switch.Root
                     className="w-11 h-6 bg-zinc-300 rounded-full relative data-[state=checked]:bg-green-600 outline-none cursor-pointer transition-colors"
                     checked={!period.closed}
-                    onCheckedChange={() => toogle(period.id)}
+                    onCheckedChange={() => toggle(period.id)}
                   >
                     <Switch.Thumb className="block w-5 h-5 bg-white rounded-full transition-transform translate-x-0.5 will-change-transform data-[state=checked]:translate-x-[22px]" />
                   </Switch.Root>

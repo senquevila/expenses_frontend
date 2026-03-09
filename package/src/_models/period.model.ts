@@ -5,12 +5,16 @@ export const PeriodSchema = z.object({
     id: z.number().int().positive(),
     month: z.number().int().min(1).max(12),
     year: z.number().int().min(2020).max(2050),
-    total: z.number(),
+    total: z.coerce.number(),
     closed: z.boolean(),
-    active: z.boolean(),
 });
 
-export const PeriodsResponseSchema = z.array(PeriodSchema);
+export const PeriodsResponseSchema = z.object({
+    count: z.number(),
+    next: z.string().nullable(),
+    previous: z.string().nullable(),
+    results: z.array(PeriodSchema),
+});
 
 export const CreatePeriodRequestSchema = PeriodSchema.omit({ id: true });
 

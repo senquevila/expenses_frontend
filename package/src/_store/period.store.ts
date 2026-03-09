@@ -10,7 +10,7 @@ interface PeriodState {
     // Actions
     fetchAll: () => Promise<void>;
     add: (data: Omit<Period, 'id'>) => Promise<void>;
-    toggle: (id: number, active: boolean) => Promise<void>;
+    toggle: (id: number) => Promise<void>;
     edit: (id: number, data: Partial<Omit<Period, 'id'>>) => Promise<void>;
     remove: (id: number) => Promise<void>;
 }
@@ -44,10 +44,10 @@ export const usePeriodStore = create<PeriodState>((set) => ({
         }
     },
 
-    toggle: async (id, active) => {
+    toggle: async (id) => {
         set({ loading: true, error: null });
         try {
-            const updated = await periodService.update(id, { active });
+            const updated = await periodService.toggle(id);
             set((state) => ({
                 periods: state.periods.map((p) => (p.id === id ? updated : p)),
             }));
