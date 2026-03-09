@@ -10,14 +10,16 @@ interface PeriodFormProps {
     onCancel?: () => void;
 }
 
+const now = new Date();
+
 export default function PeriodForm({ onCancel }: PeriodFormProps) {
   const { add } = usePeriodStore();
 
     const { register, handleSubmit, formState: { errors } } = useForm<CreatePeriodRequest>({
         resolver: zodResolver(CreatePeriodRequestSchema),
         defaultValues: {
-            month: 1,
-            year: new Date().getFullYear(),
+            month: now.getMonth(),
+            year: now.getFullYear(),
             total: 0,
             closed: false,
         },
@@ -36,17 +38,17 @@ export default function PeriodForm({ onCancel }: PeriodFormProps) {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div>
                 <label className="block text-sm font-medium text-gray-700">Year</label>
-                <input type="number" {...register("year")} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" />
+                <input type="number" {...register("year", { valueAsNumber: true })} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" />
                 {errors.year && <p className="text-red-500 text-sm mt-1">{errors.year.message}</p>}
             </div>
             <div>
                 <label className="block text-sm font-medium text-gray-700">Month</label>
-                <input type="number" {...register("month")} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" />
+                <input type="number" {...register("month", { valueAsNumber: true })} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" />
                 {errors.month && <p className="text-red-500 text-sm mt-1">{errors.month.message}</p>}
             </div>
             <div>
                 <label className="block text-sm font-medium text-gray-700">Total</label>
-                <input type="number" {...register("total")} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" />
+                <input type="number" {...register("total", { valueAsNumber: true })} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" />
                 {errors.total && <p className="text-red-500 text-sm mt-1">{errors.total.message}</p>}
             </div>
             <div className="flex items-center gap-4">

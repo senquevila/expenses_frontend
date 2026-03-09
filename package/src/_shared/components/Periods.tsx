@@ -46,8 +46,8 @@ export default function Periods() {
             <tr>
               <th className="text-left px-6 py-3 font-semibold">Year</th>
               <th className="text-left px-6 py-3 font-semibold">Month</th>
-              <th className="text-left px-6 py-3 font-semibold">Total</th>
-              <th className="text-left px-6 py-3 font-semibold">Closed</th>
+              <th className="text-right px-6 py-3 font-semibold">Total</th>
+              <th className="text-center px-6 py-3 font-semibold">Closed</th>
             </tr>
           </thead>
           <tbody>
@@ -55,11 +55,11 @@ export default function Periods() {
               <tr key={period.id} className="border-b hover:bg-zinc-50">
                 <td className="px-6 py-4">{period.year}</td>
                 <td className="px-6 py-4">{period.month}</td>
-                <td className="px-6 py-4">{period.total}</td>
+                <td className="px-6 py-4 text-right">{period.total.toLocaleString()}</td>
                 <td className="px-6 py-4 text-center">
                   <Switch.Root
                     className="w-11 h-6 bg-zinc-300 rounded-full relative data-[state=checked]:bg-green-600 outline-none cursor-pointer transition-colors"
-                    checked={!period.closed}
+                    checked={period.closed}
                     onCheckedChange={() => toggle(period.id)}
                   >
                     <Switch.Thumb className="block w-5 h-5 bg-white rounded-full transition-transform translate-x-0.5 will-change-transform data-[state=checked]:translate-x-[22px]" />
