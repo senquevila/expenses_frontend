@@ -7,6 +7,7 @@ export const PeriodSchema = z.object({
     year: z.number().int().min(2020).max(2050),
     total: z.coerce.number(),
     closed: z.boolean(),
+    active: z.boolean(),
 });
 
 export const PeriodsResponseSchema = z.object({

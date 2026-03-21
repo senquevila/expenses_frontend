@@ -44,8 +44,7 @@ export default function Periods() {
         <table className="w-full">
           <thead className="bg-zinc-100 border-b">
             <tr>
-              <th className="text-left px-6 py-3 font-semibold">Year</th>
-              <th className="text-left px-6 py-3 font-semibold">Month</th>
+              <th className="text-left px-6 py-3 font-semibold">Period</th>
               <th className="text-right px-6 py-3 font-semibold">Total</th>
               <th className="text-center px-6 py-3 font-semibold">Closed</th>
             </tr>
@@ -53,8 +52,7 @@ export default function Periods() {
           <tbody>
             {filtered.map((period) => (
               <tr key={period.id} className="border-b hover:bg-zinc-50">
-                <td className="px-6 py-4">{period.year}</td>
-                <td className="px-6 py-4">{period.month}</td>
+                <td className="px-6 py-4">{period.year}-{String(period.month).padStart(2, '0')}</td>
                 <td className="px-6 py-4 text-right">{period.total.toLocaleString()}</td>
                 <td className="px-6 py-4 text-center">
                   <Switch.Root
