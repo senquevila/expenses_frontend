@@ -6,6 +6,7 @@ import * as Dialog from "@radix-ui/react-dialog";
 import { useEffect, useState } from "react";
 import { usePeriodStore } from "@/_store/period.store";
 import PeriodForm from "@/_shared/components/PeriodForm";
+import Amount from "@/_shared/components/Amount";
 
 export default function Periods() {
   const { periods, fetchAll, loading, toggle } = usePeriodStore();
@@ -53,7 +54,9 @@ export default function Periods() {
             {filtered.map((period) => (
               <tr key={period.id} className="border-b hover:bg-zinc-50">
                 <td className="px-6 py-4">{period.year}-{String(period.month).padStart(2, '0')}</td>
-                <td className="px-6 py-4 text-right">{period.total.toLocaleString()}</td>
+                <td className="px-6 py-4 text-right">
+                  <Amount value={period.total} />
+                </td>
                 <td className="px-6 py-4 text-center">
                   <Switch.Root
                     className="w-11 h-6 bg-zinc-300 rounded-full relative data-[state=checked]:bg-green-600 outline-none cursor-pointer transition-colors"
