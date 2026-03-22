@@ -1,0 +1,11 @@
+{
+  "name": "expenses_frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "npm run dev --prefix package",
+    "build": "npm run build --prefix package",
+    "start": "npm run start --prefix package",
+    "lint": "npm run lint --prefix package"
+  }
+}
