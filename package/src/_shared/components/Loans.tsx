@@ -1,29 +1,81 @@
 "use client";
 
-import { Plus } from "lucide-react";
-import { useState } from "react";
+import { Pencil, Plus } from "lucide-react";
+import * as Dialog from "@radix-ui/react-dialog";
+import { useEffect, useState } from "react";
+import { useLoanStore } from "@/_store/loan.store";
+import { Loan } from "@/_models/loan.model";
+import LoanForm from "@/_shared/components/LoanForm";
+import Money from "@/_shared/components/Money";
+
+function loanProgress(startDate: string, months: number): number {
+  const start = new Date(startDate);
+  if (isNaN(start.getTime())) {
+    return 0;
+  }
+
+  const now = new Date();
+  const end = new Date(start.getTime());
+  end.setMonth(end.getMonth() + months);
+
+  const totalDurationMs = end.getTime() - start.getTime();
+  if (totalDurationMs <= 0) {
+    return 0;
+  }
+
+  const elapsedMs = now.getTime() - start.getTime();
+  const clampedElapsedMs = Math.min(Math.max(elapsedMs, 0), totalDurationMs);
+  const progressFraction = clampedElapsedMs / totalDurationMs;
+
+  return Math.min(100, Math.max(0, Math.round(progressFraction * 100)));
+}
 
 export function Loans() {
   const [filter, setFilter] = useState<"all" | "active">("all");
-  
-  const loans = [
-    { id: 1, name: "Home Mortgage", lender: "First Bank", balance: "$245,800.00", rate: "3.5%", payment: "$1,200/mo", active: true },
-    { id: 2, name: "Car Loan", lender: "Auto Finance Co", balance: "$18,450.00", rate: "4.2%", payment: "$385/mo", active: true },
-    { id: 3, name: "Student Loan", lender: "Education Loans Inc", balance: "$32,100.00", rate: "5.8%", payment: "$295/mo", active: false },
-  ];
+  const [open, setOpen] = useState(false);
+  const [editingLoan, setEditingLoan] = useState<Loan | null>(null);
+  const { loans, loading, fetchAll, toggle } = useLoanStore();
 
-  const filteredLoans = filter === "active" ? loans.filter(loan => loan.active) : loans;
+  useEffect(() => {
+    fetchAll();
+  }, [fetchAll]);
+
+  const filteredLoans =
+    filter === "active" ? loans.filter((loan) => loan.is_active) : loans;
 
   return (
     <div className="p-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Loans</h1>
-        <button className="flex items-center gap-2 px-4 py-2 bg-zinc-900 text-white rounded-lg hover:bg-zinc-800 transition-colors">
-          <Plus className="size-5" />
-          Add Loan
-        </button>
+        <Dialog.Root open={open} onOpenChange={setOpen}>
+          <Dialog.Trigger asChild>
+            <button className="flex items-center gap-2 px-4 py-2 bg-zinc-900 text-white rounded-lg hover:bg-zinc-800 transition-colors">
+              <Plus className="size-5" />
+              Add Loan
+            </button>
+          </Dialog.Trigger>
+          <Dialog.Portal>
+            <Dialog.Overlay className="fixed inset-0 bg-black/40 z-40" />
+            <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-lg bg-white p-6 shadow-lg">
+              <Dialog.Title className="text-xl font-semibold mb-4">New Loan</Dialog.Title>
+              <LoanForm onCancel={() => setOpen(false)} />
+            </Dialog.Content>
+          </Dialog.Portal>
+        </Dialog.Root>
       </div>
-      
+
+      <Dialog.Root open={!!editingLoan} onOpenChange={(o) => !o && setEditingLoan(null)}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 bg-black/40 z-40" />
+          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-lg bg-white p-6 shadow-lg">
+            <Dialog.Title className="text-xl font-semibold mb-4">Edit Loan</Dialog.Title>
+            {editingLoan && (
+              <LoanForm loan={editingLoan} onCancel={() => setEditingLoan(null)} />
+            )}
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
+
       <div className="mb-6 flex gap-2">
         <button
           onClick={() => setFilter("all")}
@@ -46,7 +98,13 @@ export function Loans() {
           Active Only
         </button>
       </div>
-      
+
+      {loading && <p className="text-zinc-500 text-sm">Loading loans...</p>}
+
+      {!loading && filteredLoans.length === 0 && (
+        <p className="text-zinc-500 text-sm">No loans found.</p>
+      )}
+
       <div className="grid gap-4">
         {filteredLoans.map((loan) => (
           <div
@@ -56,40 +114,74 @@ export function Loans() {
             <div className="flex justify-between items-start mb-4">
               <div>
                 <div className="flex items-center gap-3 mb-1">
-                  <h2 className="text-xl font-semibold">{loan.name}</h2>
+                  <h2 className="text-xl font-semibold">{loan.description}</h2>
                   <span
                     className={`inline-block px-3 py-1 rounded-full text-xs ${
-                      loan.active
+                      loan.is_active
                         ? "bg-green-100 text-green-800"
                         : "bg-zinc-100 text-zinc-600"
                     }`}
                   >
-                    {loan.active ? "Active" : "Inactive"}
+                    {loan.is_active ? "Active" : "Inactive"}
                   </span>
                 </div>
-                <p className="text-zinc-500 text-sm">{loan.lender}</p>
+                <p className="text-zinc-500 text-sm">{loan.bank}</p>
               </div>
-              <div className="text-right">
-                <p className="text-2xl font-bold text-red-600">{loan.balance}</p>
+              <div className="flex items-center gap-3">
+                <Money
+                  value={{ ...loan.amount, value: -Math.abs(loan.amount.value) }}
+                  className="text-2xl"
+                />
+                <button
+                  onClick={() => setEditingLoan(loan)}
+                  className="p-1.5 rounded hover:bg-zinc-100 transition-colors"
+                  aria-label="Edit loan"
+                >
+                  <Pencil className="size-4 text-zinc-500" />
+                </button>
               </div>
             </div>
             <div className="flex gap-6 text-sm mb-4">
               <div>
-                <p className="text-zinc-500">Interest Rate</p>
-                <p className="font-semibold">{loan.rate}</p>
+                <p className="text-zinc-500">Start Date</p>
+                <p className="font-semibold">{loan.start_date}</p>
+              </div>
+              <div>
+                <p className="text-zinc-500">End Date</p>
+                <p className="font-semibold">{loan.end_date}</p>
+              </div>
+              <div>
+                <p className="text-zinc-500">Term</p>
+                <p className="font-semibold">{loan.months} months</p>
               </div>
               <div>
                 <p className="text-zinc-500">Monthly Payment</p>
-                <p className="font-semibold">{loan.payment}</p>
+                <Money value={loan.monthly_payment} />
+              </div>
+              <div>
+                <p className="text-zinc-500">Progress</p>
+                <p className="font-semibold">{loanProgress(loan.start_date, loan.months)}%</p>
               </div>
             </div>
+            <div className="w-full bg-zinc-100 rounded-full h-2 mb-4">
+              <div
+                className="bg-zinc-900 h-2 rounded-full transition-all"
+                style={{ width: `${loanProgress(loan.start_date, loan.months)}%` }}
+              />
+            </div>
             <div className="pt-4 border-t border-zinc-100">
-              {loan.active ? (
-                <button className="px-4 py-2 bg-zinc-200 text-zinc-700 rounded-lg hover:bg-zinc-300 transition-colors text-sm">
+              {loan.is_active ? (
+                <button
+                  onClick={() => toggle(loan.id)}
+                  className="px-4 py-2 bg-zinc-200 text-zinc-700 rounded-lg hover:bg-zinc-300 transition-colors text-sm"
+                >
                   Mark as Inactive
                 </button>
               ) : (
-                <button className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm">
+                <button
+                  onClick={() => toggle(loan.id)}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
+                >
                   Mark as Active
                 </button>
               )}
