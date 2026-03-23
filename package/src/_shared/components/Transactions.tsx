@@ -1,17 +1,19 @@
 "use client";
 
-import { Plus } from "lucide-react";
+import { Pencil, Plus } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { useEffect, useState } from "react";
 import { useTransactionStore } from "@/_store/transaction.store";
+import { Transaction } from "@/_models/transaction.model";
 import TransactionForm from "@/_shared/components/TransactionForm";
-import Amount from "@/_shared/components/Amount";
+import Money from "@/_shared/components/Money";
 
 export default function Transactions() {
   const transactions = useTransactionStore((s) => s.transactions);
   const loading = useTransactionStore((s) => s.loading);
   const fetchAll = useTransactionStore((s) => s.fetchAll);
   const [open, setOpen] = useState(false);
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
 
   useEffect(() => {
     fetchAll();
@@ -40,6 +42,18 @@ export default function Transactions() {
         </Dialog.Root>
       </div>
 
+      <Dialog.Root open={!!editingTransaction} onOpenChange={(o) => !o && setEditingTransaction(null)}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 bg-black/40 z-40" />
+          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-lg bg-white p-6 shadow-lg">
+            <Dialog.Title className="text-xl font-semibold mb-4">Edit Transaction</Dialog.Title>
+            {editingTransaction && (
+              <TransactionForm transaction={editingTransaction} onCancel={() => setEditingTransaction(null)} />
+            )}
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
+
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <table className="w-full">
           <thead className="bg-zinc-100 border-b">
@@ -48,6 +62,7 @@ export default function Transactions() {
               <th className="text-left px-6 py-3 font-semibold">Description</th>
               <th className="text-left px-6 py-3 font-semibold">Account</th>
               <th className="text-right px-6 py-3 font-semibold">Amount</th>
+              <th className="px-6 py-3" />
             </tr>
           </thead>
           <tbody>
@@ -57,7 +72,16 @@ export default function Transactions() {
                 <td className="px-6 py-4">{transaction.description}</td>
                 <td className="px-6 py-4">{transaction.account.name}</td>
                 <td className="px-6 py-4 text-right">
-                  <Amount value={transaction.amount} />
+                  <Money value={transaction.amount} />
+                </td>
+                <td className="px-6 py-4 text-right">
+                  <button
+                    onClick={() => setEditingTransaction(transaction)}
+                    className="p-1.5 rounded hover:bg-zinc-100 transition-colors"
+                    aria-label="Edit transaction"
+                  >
+                    <Pencil className="size-4 text-zinc-500" />
+                  </button>
                 </td>
               </tr>
             ))}

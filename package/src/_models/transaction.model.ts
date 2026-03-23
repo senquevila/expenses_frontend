@@ -1,17 +1,16 @@
 import { z } from 'zod';
 import { AccountSchema } from '@/_models/account.model';
 import { PeriodSchema } from '@/_models/period.model';
-
+import { MoneySchema } from '@/_models/money.model';
 
 // Schemas
 export const TransactionSchema = z.object({
     id: z.number().int().positive(),
     period: PeriodSchema,
     account: AccountSchema,
-    currency: z.number().int().positive(),
     description: z.string().nullable(),
-    amount: z.coerce.number(),
-    local_amount: z.coerce.number(),
+    amount: MoneySchema,
+    local_amount: MoneySchema,
     payment_date: z.string().refine((date) => !isNaN(Date.parse(date)), {
         message: 'Invalid date format',
     }),
@@ -28,11 +27,10 @@ export const TransactionsResponseSchema = z.object({
     results: z.array(TransactionSchema),
 });
 
-export const CreateTransactionRequestSchema = TransactionSchema.omit({ id: true, created: true, modified: true, period: true, account: true, amount: true, local_amount: true }).extend({
+export const CreateTransactionRequestSchema = TransactionSchema.omit({ id: true, created: true, modified: true, period: true, account: true, local_amount: true }).extend({
     period: z.number().int().positive(),
     account: z.number().int().positive(),
-    amount: z.number(),
-    local_amount: z.number(),
+    amount: MoneySchema,
 });
 
 export const UpdateTransactionRequestSchema = CreateTransactionRequestSchema.partial();

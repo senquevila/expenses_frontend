@@ -6,7 +6,7 @@ import * as Dialog from "@radix-ui/react-dialog";
 import { useEffect, useState } from "react";
 import { usePeriodStore } from "@/_store/period.store";
 import PeriodForm from "@/_shared/components/PeriodForm";
-import Amount from "@/_shared/components/Amount";
+import Money from "@/_shared/components/Money";
 
 export default function Periods() {
   const { periods, fetchAll, loading, toggle } = usePeriodStore();
@@ -55,7 +55,7 @@ export default function Periods() {
               <tr key={period.id} className="border-b hover:bg-zinc-50">
                 <td className="px-6 py-4">{period.year}-{String(period.month).padStart(2, '0')}</td>
                 <td className="px-6 py-4 text-right">
-                  <Amount value={period.total} />
+                  <Money value={period.total} />
                 </td>
                 <td className="px-6 py-4 text-center">
                   <Switch.Root

@@ -1,11 +1,12 @@
 import { z } from 'zod';
+import { MoneySchema } from '@/_models/money.model';
 
 // Schemas
 export const PeriodSchema = z.object({
     id: z.number().int().positive(),
     month: z.number().int().min(1).max(12),
     year: z.number().int().min(2020).max(2050),
-    total: z.coerce.number(),
+    total: MoneySchema,
     closed: z.boolean(),
     active: z.boolean(),
 });
