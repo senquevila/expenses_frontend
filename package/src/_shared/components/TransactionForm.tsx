@@ -170,15 +170,11 @@ export default function TransactionForm({ onCancel, transaction }: TransactionFo
         </div>
         {errors.amount && <p className="text-red-500 text-sm mt-1">{errors.amount.message}</p>}
       </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-700">Identifier</label>
-        {(errors.amount?.value?.message || errors.amount?.currency?.message) && (
-          <p className="text-red-500 text-sm mt-1">
-            {errors.amount?.value?.message || errors.amount?.currency?.message}
-          </p>
-        )}
-        {errors.identifier && <p className="text-red-500 text-sm mt-1">{errors.identifier.message}</p>}
-      </div>
+      {(errors.amount?.value?.message || errors.amount?.currency?.message) && (
+        <p className="text-red-500 text-sm mt-1">
+          {errors.amount?.value?.message || errors.amount?.currency?.message}
+        </p>
+      )}
       <div className="flex gap-2">
         <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
           <Plus className="size-5 inline-block mr-2" />
