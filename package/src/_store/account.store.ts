@@ -19,7 +19,8 @@ export const useAccountStore = create<AccountState>((set) => ({
         try {
             const data = await accountService.getAll();
             set({ accounts: data });
-        } catch {
+        } catch (error) {
+            console.error('Failed to fetch accounts:', error);
             toast.error('Failed to fetch accounts');
         } finally {
             set({ loading: false });

@@ -26,7 +26,8 @@ export const useTransactionStore = create<TransactionState>((set) => ({
         try {
             const data = await transactionService.getAll();
             set({ transactions: data });
-        } catch {
+        } catch (error) {
+            console.error('Failed to fetch transactions:', error);
             toast.error('Failed to fetch transactions');
         } finally {
             set({ loading: false });

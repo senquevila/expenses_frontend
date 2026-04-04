@@ -1,12 +1,15 @@
+"use client";
+
+import { useEffect } from "react";
 import { Plus, ArrowLeftRight, Link2, Clock } from "lucide-react";
+import { useAccountStore } from "@/_store/account.store";
 
 export function Accounts() {
-  const accounts = [
-    { id: 1, name: "Checking Account", type: "Asset", balance: "$5,240.00" },
-    { id: 2, name: "Savings Account", type: "Asset", balance: "$12,850.00" },
-    { id: 3, name: "Credit Card", type: "Liability", balance: "$1,320.00" },
-    { id: 4, name: "Investment Portfolio", type: "Asset", balance: "$25,600.00" },
-  ];
+  const { accounts, loading, fetchAll } = useAccountStore();
+
+  useEffect(() => {
+    fetchAll();
+  }, [fetchAll]);
 
   return (
     <div className="p-8">
@@ -31,24 +34,45 @@ export function Accounts() {
           </button>
         </div>
       </div>
-      <div className="grid gap-4">
-        {accounts.map((account) => (
-          <div
-            key={account.id}
-            className="bg-white p-6 rounded-lg shadow hover:shadow-md transition-shadow"
-          >
-            <div className="flex justify-between items-start">
-              <div>
-                <h2 className="text-xl font-semibold mb-1">{account.name}</h2>
-                <p className="text-zinc-500 text-sm">{account.type}</p>
-              </div>
-              <div className="text-right">
-                <p className="text-2xl font-bold">{account.balance}</p>
+      {loading ? (
+        <p className="text-zinc-500">Loading accounts...</p>
+      ) : (
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+          {accounts.map((account) => (
+            <div
+              key={account.id}
+              className="bg-white p-5 rounded-lg shadow hover:shadow-md transition-shadow flex flex-col gap-3"
+            >
+              <h2 className="text-lg font-semibold leading-tight">{account.name}</h2>
+              <div className="flex items-center justify-between">
+                {account.parent !== null && (
+                  <p className="text-zinc-400 text-xs">Parent: {account.parent}</p>
+                )}
+                <div className="ml-auto flex items-center gap-1.5">
+                  <span
+                    className={`text-xs font-medium px-2 py-0.5 rounded-full text-white ${
+                      account.account_type.toLowerCase().startsWith("fix")
+                        ? "bg-blue-500"
+                        : account.account_type.toLowerCase().startsWith("var")
+                        ? "bg-yellow-400"
+                        : "bg-zinc-400"
+                    }`}
+                  >
+                    {account.account_type}
+                  </span>
+                  <span
+                    className={`text-sm font-bold px-2 py-0.5 rounded-full text-white ${
+                      account.sign < 0 ? "bg-red-500" : "bg-green-500"
+                    }`}
+                  >
+                    {account.sign < 0 ? "−" : "+"}
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

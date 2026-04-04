@@ -26,7 +26,8 @@ export const usePeriodStore = create<PeriodState>((set) => ({
         try {
             const data = await periodService.getAll();
             set({ periods: data });
-        } catch {
+        } catch (error) {
+            console.error('Failed to fetch periods:', error);
             toast.error('Failed to fetch periods');
         } finally {
             set({ loading: false });
