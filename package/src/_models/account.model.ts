@@ -1,12 +1,19 @@
 import { z } from 'zod';
 
 // Schemas
+export const AccountParentSchema = z.object({
+    id: z.number().int().positive(),
+    name: z.string(),
+    sign: z.number(),
+    account_type: z.string(),
+});
+
 export const AccountSchema = z.object({
     id: z.number().int().positive(),
     name: z.string(),
     sign: z.number(),
     account_type: z.string(),
-    parent: z.number().nullable(),
+    parent: AccountParentSchema.nullable(),
 });
 
 export const AccountsResponseSchema = z.object({
@@ -17,4 +24,5 @@ export const AccountsResponseSchema = z.object({
 });
 
 // Types
+export type AccountParent = z.infer<typeof AccountParentSchema>;
 export type Account = z.infer<typeof AccountSchema>;

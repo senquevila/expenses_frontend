@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { Plus, ArrowLeftRight, Link2, Clock } from "lucide-react";
 import { useAccountStore } from "@/_store/account.store";
+import { Account } from "@/_models/account.model";
 
 export function Accounts() {
   const { accounts, loading, fetchAll } = useAccountStore();
@@ -37,37 +38,40 @@ export function Accounts() {
       {loading ? (
         <p className="text-zinc-500">Loading accounts...</p>
       ) : (
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-          {accounts.map((account) => (
-            <div
-              key={account.id}
-              className="bg-white p-5 rounded-lg shadow hover:shadow-md transition-shadow flex flex-col gap-3"
-            >
-              <h2 className="text-lg font-semibold leading-tight">{account.name}</h2>
-              <div className="flex items-center justify-between">
-                {account.parent !== null && (
-                  <p className="text-zinc-400 text-xs">Parent: {account.parent}</p>
-                )}
-                <div className="ml-auto flex items-center gap-1.5">
-                  <span
-                    className={`text-xs font-medium px-2 py-0.5 rounded-full text-white ${
-                      account.account_type.toLowerCase().startsWith("fix")
-                        ? "bg-blue-500"
-                        : account.account_type.toLowerCase().startsWith("var")
-                        ? "bg-yellow-400"
-                        : "bg-zinc-400"
-                    }`}
+        <div className="flex flex-col gap-8">
+          {Object.entries(
+            accounts.reduce<Record<string, Account[]>>((groups, account) => {
+              const type = account.account_type;
+              if (!groups[type]) groups[type] = [];
+              groups[type].push(account);
+              return groups;
+            }, {})
+          ).sort(([a], [b]) => a.localeCompare(b)).map(([type, groupAccounts]) => (
+            <div key={type}>
+              <h2 className="text-sm font-semibold uppercase tracking-widest text-zinc-400 mb-3">{type}</h2>
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                {[...groupAccounts].sort((a, b) => a.sign - b.sign || a.name.localeCompare(b.name)).map((account) => (
+                  <div
+                    key={account.id}
+                    className="bg-white p-5 rounded-lg shadow hover:shadow-md transition-shadow flex flex-col gap-3"
                   >
-                    {account.account_type}
-                  </span>
-                  <span
-                    className={`text-sm font-bold px-2 py-0.5 rounded-full text-white ${
-                      account.sign < 0 ? "bg-red-500" : "bg-green-500"
-                    }`}
-                  >
-                    {account.sign < 0 ? "−" : "+"}
-                  </span>
-                </div>
+                    <h3 className="text-base font-semibold leading-tight">{account.name}</h3>
+                    <div className="flex items-center justify-between">
+                      {account.parent !== null && (
+                        <p className="text-zinc-400 text-xs">Parent: {account.parent.name}</p>
+                      )}
+                      <div className="ml-auto flex items-center gap-1.5">
+                        <span
+                          className={`text-sm font-bold px-2 py-0.5 rounded-full text-white ${
+                            account.sign < 0 ? "bg-red-500" : "bg-green-500"
+                          }`}
+                        >
+                          {account.sign < 0 ? "−" : "+"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           ))}
