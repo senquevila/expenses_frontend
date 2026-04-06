@@ -1,12 +1,16 @@
 "use client";
 
-import { useEffect } from "react";
-import { Plus, ArrowLeftRight, Link2, Clock } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Plus, ArrowLeftRight, Link2, Clock, Pencil } from "lucide-react";
+import * as Dialog from "@radix-ui/react-dialog";
 import { useAccountStore } from "@/_store/account.store";
 import { Account } from "@/_models/account.model";
+import AccountForm from "@/_shared/components/AccountForm";
 
 export function Accounts() {
   const { accounts, loading, fetchAll } = useAccountStore();
+  const [createOpen, setCreateOpen] = useState(false);
+  const [editingAccount, setEditingAccount] = useState<Account | null>(null);
 
   useEffect(() => {
     fetchAll();
@@ -29,12 +33,36 @@ export function Accounts() {
             <Clock className="size-5" />
             Programmed
           </button>
-          <button className="flex items-center gap-2 px-4 py-2 bg-zinc-900 text-white rounded-lg hover:bg-zinc-800 transition-colors">
-            <Plus className="size-5" />
-            Create Account
-          </button>
+          <Dialog.Root open={createOpen} onOpenChange={setCreateOpen}>
+            <Dialog.Trigger asChild>
+              <button className="flex items-center gap-2 px-4 py-2 bg-zinc-900 text-white rounded-lg hover:bg-zinc-800 transition-colors">
+                <Plus className="size-5" />
+                Create Account
+              </button>
+            </Dialog.Trigger>
+            <Dialog.Portal>
+              <Dialog.Overlay className="fixed inset-0 bg-black/40 z-40" />
+              <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-lg bg-white p-6 shadow-lg">
+                <Dialog.Title className="text-xl font-semibold mb-4">New Account</Dialog.Title>
+                <AccountForm onCancel={() => setCreateOpen(false)} />
+              </Dialog.Content>
+            </Dialog.Portal>
+          </Dialog.Root>
         </div>
       </div>
+
+      <Dialog.Root open={!!editingAccount} onOpenChange={(o) => !o && setEditingAccount(null)}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 bg-black/40 z-40" />
+          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-lg bg-white p-6 shadow-lg">
+            <Dialog.Title className="text-xl font-semibold mb-4">Edit Account</Dialog.Title>
+            {editingAccount && (
+              <AccountForm account={editingAccount} onCancel={() => setEditingAccount(null)} />
+            )}
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
+
       {loading ? (
         <p className="text-zinc-500">Loading accounts...</p>
       ) : (
@@ -55,7 +83,16 @@ export function Accounts() {
                     key={account.id}
                     className="bg-white p-5 rounded-lg shadow hover:shadow-md transition-shadow flex flex-col gap-3"
                   >
-                    <h3 className="text-base font-semibold leading-tight">{account.name}</h3>
+                    <div className="flex items-start justify-between">
+                      <h3 className="text-base font-semibold leading-tight">{account.name}</h3>
+                      <button
+                        onClick={() => setEditingAccount(account)}
+                        className="p-1 rounded hover:bg-zinc-100 transition-colors"
+                        aria-label="Edit account"
+                      >
+                        <Pencil className="size-4 text-zinc-400" />
+                      </button>
+                    </div>
                     <div className="flex items-center justify-between">
                       {account.parent !== null && (
                         <p className="text-zinc-400 text-xs">Parent: {account.parent.name}</p>
