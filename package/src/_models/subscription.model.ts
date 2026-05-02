@@ -28,6 +28,10 @@ export const CreateSubscriptionRequestSchema = SubscriptionSchema.omit({ id: tru
 
 export const UpdateSubscriptionRequestSchema = CreateSubscriptionRequestSchema.partial();
 
+export const ToggleResponseSchema = z.object({
+    is_active: z.boolean(),
+});
+
 // Types
 export type Subscription = z.infer<typeof SubscriptionSchema>;
 export type CreateSubscriptionRequest = z.infer<typeof CreateSubscriptionRequestSchema>;

@@ -2,7 +2,7 @@ import apiClient from "@/_libs/api/client";
 
 import {
     Loan, CreateLoanRequest, UpdateLoanRequest,
-    LoansResponseSchema, LoanSchema
+    LoansResponseSchema, LoanSchema, ToggleResponseSchema,
 } from "@/_models/loan.model";
 
 export const loanService = {
@@ -26,9 +26,9 @@ export const loanService = {
         return LoanSchema.parse(response.data);
     },
 
-    async toggle(id: number): Promise<Loan> {
+    async toggle(id: number): Promise<boolean> {
         const response = await apiClient.post(`loans/${id}/toggle/`);
-        return LoanSchema.parse(response.data);
+        return ToggleResponseSchema.parse(response.data).is_active;
     },
 
     async delete(id: number): Promise<void> {

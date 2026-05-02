@@ -64,11 +64,11 @@ export const useSubscriptionStore = create<SubscriptionState>((set) => ({
     toggle: async (id) => {
         set({ loading: true, error: null });
         try {
-            const updatedSub = await subscriptionService.toggle(id);
+            const isActive = await subscriptionService.toggle(id);
             set((state) => ({
-                subscriptions: state.subscriptions.map((s) => (s.id === id ? updatedSub : s)),
+                subscriptions: state.subscriptions.map((s) => (s.id === id ? { ...s, is_active: isActive } : s)),
             }));
-            toast.success(`Subscription marked as ${updatedSub.is_active ? 'active' : 'inactive'}`);
+            toast.success(`Subscription marked as ${isActive ? 'active' : 'inactive'}`);
         } catch {
             toast.error('Failed to update subscription');
         } finally {

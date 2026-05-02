@@ -26,6 +26,10 @@ export const CreateLoanRequestSchema = LoanSchema.omit({ id: true });
 
 export const UpdateLoanRequestSchema = CreateLoanRequestSchema.partial();
 
+export const ToggleResponseSchema = z.object({
+    is_active: z.boolean(),
+});
+
 // Types
 export type Loan = z.infer<typeof LoanSchema>;
 export type CreateLoanRequest = z.infer<typeof CreateLoanRequestSchema>;

@@ -2,7 +2,7 @@ import apiClient from "@/_libs/api/client";
 
 import {
     Subscription, CreateSubscriptionRequest, UpdateSubscriptionRequest,
-    SubscriptionsResponseSchema, SubscriptionSchema
+    SubscriptionsResponseSchema, SubscriptionSchema, ToggleResponseSchema,
 } from "@/_models/subscription.model";
 
 export const subscriptionService = {
@@ -26,9 +26,9 @@ export const subscriptionService = {
         return SubscriptionSchema.parse(response.data);
     },
 
-    async toggle(id: number): Promise<Subscription> {
+    async toggle(id: number): Promise<boolean> {
         const response = await apiClient.post(`subscriptions/${id}/toggle/`);
-        return SubscriptionSchema.parse(response.data);
+        return ToggleResponseSchema.parse(response.data).is_active;
     },
 
     async delete(id: number): Promise<void> {

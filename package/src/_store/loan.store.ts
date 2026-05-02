@@ -64,11 +64,11 @@ export const useLoanStore = create<LoanState>((set) => ({
     toggle: async (id) => {
         set({ loading: true, error: null });
         try {
-            const updatedLoan = await loanService.toggle(id);
+            const isActive = await loanService.toggle(id);
             set((state) => ({
-                loans: state.loans.map((l) => (l.id === id ? updatedLoan : l)),
+                loans: state.loans.map((l) => (l.id === id ? { ...l, is_active: isActive } : l)),
             }));
-            toast.success(`Loan marked as ${updatedLoan.is_active ? 'active' : 'inactive'}`);
+            toast.success(`Loan marked as ${isActive ? 'active' : 'inactive'}`);
         } catch {
             toast.error('Failed to update loan');
         } finally {
