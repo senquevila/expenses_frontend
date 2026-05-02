@@ -24,14 +24,14 @@ export default function LoanForm({ onCancel, loan }: LoanFormProps) {
   const [currencies, setCurrencies] = useState<Currency[]>([]);
   const [loadingCurrencies, setLoadingCurrencies] = useState(true);
 
-  const { register, handleSubmit, setValue, getValues, formState: { errors } } = useForm<FormValues>({
+  const { register, handleSubmit, setValue, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(CreateLoanRequestSchema),
     defaultValues: loan
       ? {
           description: loan.description,
           bank: loan.bank,
-          amount: loan.amount,
-          monthly_payment: loan.monthly_payment,
+          amount: loan.amount.value,
+          monthly_payment: loan.monthly_payment.value,
           start_date: loan.start_date,
           months: loan.months,
           is_active: loan.is_active,
@@ -40,8 +40,8 @@ export default function LoanForm({ onCancel, loan }: LoanFormProps) {
       : {
           description: "",
           bank: "",
-          amount: { value: 0, currency: "HNL" },
-          monthly_payment: { value: 0, currency: "HNL" },
+          amount: 0,
+          monthly_payment: 0,
           start_date: today,
           months: 12,
           is_active: true,
@@ -58,12 +58,8 @@ export default function LoanForm({ onCancel, loan }: LoanFormProps) {
         const data = await currencyService.getAll();
         if (!isMounted) return;
         setCurrencies(data);
-
         if (!loan && data[0]) {
-          const alpha3 = data[0].alpha3;
-          if (!getValues("amount.currency")) setValue("amount.currency", alpha3);
-          if (!getValues("monthly_payment.currency")) setValue("monthly_payment.currency", alpha3);
-          if (!getValues("currency")) setValue("currency", data[0].id);
+          setValue("currency", data[0].id);
         }
       } catch (error) {
         console.error("Failed to fetch currencies:", error);
@@ -74,7 +70,7 @@ export default function LoanForm({ onCancel, loan }: LoanFormProps) {
 
     loadCurrencies();
     return () => { isMounted = false; };
-  }, [getValues, setValue, loan]);
+  }, [setValue, loan]);
 
   const onSubmit = async (data: FormValues) => {
     try {
@@ -102,52 +98,6 @@ export default function LoanForm({ onCancel, loan }: LoanFormProps) {
         {errors.bank && <p className="text-red-500 text-sm mt-1">{errors.bank.message}</p>}
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700">Amount</label>
-        <div className="flex gap-2">
-          <input type="number" step="0.01" {...register("amount.value", { valueAsNumber: true })} placeholder="Value" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" />
-          <select
-            {...register("amount.currency")}
-            className="mt-1 block w-32 border border-gray-300 rounded-md shadow-sm p-2 bg-white"
-            disabled={loadingCurrencies}
-          >
-            <option value="">Currency</option>
-            {currencies.map((c) => (
-              <option key={c.id} value={c.alpha3}>{c.alpha3}</option>
-            ))}
-          </select>
-        </div>
-        {errors.amount?.value && <p className="text-red-500 text-sm mt-1">{errors.amount.value.message}</p>}
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-700">Monthly Payment</label>
-        <div className="flex gap-2">
-          <input type="number" step="0.01" {...register("monthly_payment.value", { valueAsNumber: true })} placeholder="Value" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" />
-          <select
-            {...register("monthly_payment.currency")}
-            className="mt-1 block w-32 border border-gray-300 rounded-md shadow-sm p-2 bg-white"
-            disabled={loadingCurrencies}
-          >
-            <option value="">Currency</option>
-            {currencies.map((c) => (
-              <option key={c.id} value={c.alpha3}>{c.alpha3}</option>
-            ))}
-          </select>
-        </div>
-        {errors.monthly_payment?.value && <p className="text-red-500 text-sm mt-1">{errors.monthly_payment.value.message}</p>}
-      </div>
-      <div className="flex gap-4">
-        <div className="flex-1">
-          <label className="block text-sm font-medium text-gray-700">Start Date</label>
-          <input type="date" {...register("start_date")} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" />
-          {errors.start_date && <p className="text-red-500 text-sm mt-1">{errors.start_date.message}</p>}
-        </div>
-        <div className="flex-1">
-          <label className="block text-sm font-medium text-gray-700">Term (months)</label>
-          <input type="number" {...register("months", { valueAsNumber: true })} min={1} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" />
-          {errors.months && <p className="text-red-500 text-sm mt-1">{errors.months.message}</p>}
-        </div>
-      </div>
-      <div>
         <label className="block text-sm font-medium text-gray-700">Currency</label>
         <select
           {...register("currency", { valueAsNumber: true })}
@@ -160,6 +110,28 @@ export default function LoanForm({ onCancel, loan }: LoanFormProps) {
           ))}
         </select>
         {errors.currency && <p className="text-red-500 text-sm mt-1">{errors.currency.message}</p>}
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700">Amount</label>
+        <input type="number" step="0.01" {...register("amount", { valueAsNumber: true })} placeholder="0.00" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" />
+        {errors.amount && <p className="text-red-500 text-sm mt-1">{errors.amount.message}</p>}
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700">Monthly Payment</label>
+        <input type="number" step="0.01" {...register("monthly_payment", { valueAsNumber: true })} placeholder="0.00" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" />
+        {errors.monthly_payment && <p className="text-red-500 text-sm mt-1">{errors.monthly_payment.message}</p>}
+      </div>
+      <div className="flex gap-4">
+        <div className="flex-1">
+          <label className="block text-sm font-medium text-gray-700">Start Date</label>
+          <input type="date" {...register("start_date")} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" />
+          {errors.start_date && <p className="text-red-500 text-sm mt-1">{errors.start_date.message}</p>}
+        </div>
+        <div className="flex-1">
+          <label className="block text-sm font-medium text-gray-700">Term (months)</label>
+          <input type="number" {...register("months", { valueAsNumber: true })} min={1} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" />
+          {errors.months && <p className="text-red-500 text-sm mt-1">{errors.months.message}</p>}
+        </div>
       </div>
       <div className="flex items-center gap-2">
         <input type="checkbox" id="is_active" {...register("is_active")} className="rounded" />

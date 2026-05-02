@@ -24,7 +24,13 @@ export const SubscriptionsResponseSchema = z.object({
     results: z.array(SubscriptionSchema),
 });
 
-export const CreateSubscriptionRequestSchema = SubscriptionSchema.omit({ id: true });
+export const CreateSubscriptionRequestSchema = z.object({
+    name: z.string(),
+    monthly_payment: z.number(),
+    subscription_type: z.enum(SUBSCRIPTION_TYPES),
+    is_active: z.boolean(),
+    currency: z.number().int().positive(),
+});
 
 export const UpdateSubscriptionRequestSchema = CreateSubscriptionRequestSchema.partial();
 

@@ -22,19 +22,19 @@ export default function SubscriptionForm({ onCancel, subscription }: Subscriptio
   const [currencies, setCurrencies] = useState<Currency[]>([]);
   const [loadingCurrencies, setLoadingCurrencies] = useState(true);
 
-  const { register, handleSubmit, setValue, getValues, formState: { errors } } = useForm<FormValues>({
+  const { register, handleSubmit, setValue, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(CreateSubscriptionRequestSchema),
     defaultValues: subscription
       ? {
           name: subscription.name,
-          monthly_payment: subscription.monthly_payment,
+          monthly_payment: subscription.monthly_payment.value,
           subscription_type: subscription.subscription_type,
           is_active: subscription.is_active,
           currency: subscription.currency,
         }
       : {
           name: "",
-          monthly_payment: { value: 0, currency: "HNL" },
+          monthly_payment: 0,
           subscription_type: "OTHER",
           is_active: true,
           currency: undefined,
@@ -50,11 +50,8 @@ export default function SubscriptionForm({ onCancel, subscription }: Subscriptio
         const data = await currencyService.getAll();
         if (!isMounted) return;
         setCurrencies(data);
-
         if (!subscription && data[0]) {
-          const alpha3 = data[0].alpha3;
-          if (!getValues("monthly_payment.currency")) setValue("monthly_payment.currency", alpha3);
-          if (!getValues("currency")) setValue("currency", data[0].id);
+          setValue("currency", data[0].id);
         }
       } catch (error) {
         console.error("Failed to fetch currencies:", error);
@@ -65,7 +62,7 @@ export default function SubscriptionForm({ onCancel, subscription }: Subscriptio
 
     loadCurrencies();
     return () => { isMounted = false; };
-  }, [getValues, setValue, subscription]);
+  }, [setValue, subscription]);
 
   const onSubmit = async (data: FormValues) => {
     try {
@@ -100,23 +97,6 @@ export default function SubscriptionForm({ onCancel, subscription }: Subscriptio
         {errors.subscription_type && <p className="text-red-500 text-sm mt-1">{errors.subscription_type.message}</p>}
       </div>
       <div>
-        <label htmlFor="monthly_payment_value" className="block text-sm font-medium text-gray-700">Monthly Payment</label>
-        <div className="flex gap-2">
-          <input id="monthly_payment_value" type="number" step="0.01" {...register("monthly_payment.value", { valueAsNumber: true })} placeholder="Value" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" />
-          <select
-            {...register("monthly_payment.currency")}
-            className="mt-1 block w-32 border border-gray-300 rounded-md shadow-sm p-2 bg-white"
-            disabled={loadingCurrencies}
-          >
-            <option value="" disabled>Select currency</option>
-            {currencies.map((c) => (
-              <option key={c.id} value={c.alpha3}>{c.alpha3}</option>
-            ))}
-          </select>
-        </div>
-        {errors.monthly_payment?.value && <p className="text-red-500 text-sm mt-1">{errors.monthly_payment.value.message}</p>}
-      </div>
-      <div>
         <label className="block text-sm font-medium text-gray-700">Currency</label>
         <select
           {...register("currency", { valueAsNumber: true })}
@@ -129,6 +109,11 @@ export default function SubscriptionForm({ onCancel, subscription }: Subscriptio
           ))}
         </select>
         {errors.currency && <p className="text-red-500 text-sm mt-1">{errors.currency.message}</p>}
+      </div>
+      <div>
+        <label htmlFor="monthly_payment" className="block text-sm font-medium text-gray-700">Monthly Payment</label>
+        <input id="monthly_payment" type="number" step="0.01" {...register("monthly_payment", { valueAsNumber: true })} placeholder="0.00" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" />
+        {errors.monthly_payment && <p className="text-red-500 text-sm mt-1">{errors.monthly_payment.message}</p>}
       </div>
       <div className="flex items-center gap-2">
         <input type="checkbox" id="is_active" {...register("is_active")} className="rounded" />

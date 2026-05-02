@@ -22,7 +22,16 @@ export const LoansResponseSchema = z.object({
     results: z.array(LoanSchema),
 });
 
-export const CreateLoanRequestSchema = LoanSchema.omit({ id: true });
+export const CreateLoanRequestSchema = z.object({
+    description: z.string(),
+    bank: z.string(),
+    amount: z.number(),
+    monthly_payment: z.number(),
+    start_date: z.string(),
+    months: z.number().int().positive(),
+    is_active: z.boolean(),
+    currency: z.number().int().positive(),
+});
 
 export const UpdateLoanRequestSchema = CreateLoanRequestSchema.partial();
 
