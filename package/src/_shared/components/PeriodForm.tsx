@@ -23,10 +23,11 @@ export default function PeriodForm({ onCancel }: PeriodFormProps) {
     const { register, handleSubmit, setValue, getValues, formState: { errors } } = useForm<CreatePeriodRequest>({
         resolver: zodResolver(CreatePeriodRequestSchema),
         defaultValues: {
-            month: now.getMonth(),
+            month: now.getMonth() + 1,
             year: now.getFullYear(),
             total: { value: 0, currency: "" },
             closed: false,
+            active: true,
         },
     });
 
