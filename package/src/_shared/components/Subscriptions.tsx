@@ -14,7 +14,7 @@ export function Subscriptions() {
   const [editingSubscription, setEditingSubscription] =
     useState<Subscription | null>(null);
   const {
-    subscriptions,
+    items: subscriptions,
     summary,
     summaryLoading,
     loading,

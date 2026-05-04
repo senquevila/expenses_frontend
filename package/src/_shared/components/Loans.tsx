@@ -35,7 +35,7 @@ export function Loans() {
   const [open, setOpen] = useState(false);
   const [editingLoan, setEditingLoan] = useState<Loan | null>(null);
   const {
-    loans,
+    items: loans,
     summary,
     summaryLoading,
     loading,
