@@ -7,6 +7,7 @@ import {
   Calendar,
   Wallet,
   ArrowLeftRight,
+  Upload,
   CreditCard,
   RotateCcw,
   Settings as SettingsIcon,
@@ -20,6 +21,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     { path: "/periods", label: "Periods", icon: Calendar },
     { path: "/accounts", label: "Accounts", icon: Wallet },
     { path: "/transactions", label: "Transactions", icon: ArrowLeftRight },
+    { path: "/uploads", label: "Uploads", icon: Upload },
     { path: "/loans", label: "Loans", icon: CreditCard },
     { path: "/subscriptions", label: "Subscriptions", icon: RotateCcw },
     { path: "/settings", label: "Settings", icon: SettingsIcon },
@@ -37,7 +39,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       {/* Side Navigation */}
       <aside className="w-64 bg-zinc-900 text-white flex flex-col">
         <div className="p-6 border-b border-zinc-800">
-          <h1 className="text-xl font-semibold">My App</h1>
+          <h1 className="text-xl font-semibold">Expenses</h1>
         </div>
         <nav className="flex-1 p-4">
           <ul className="space-y-2">
@@ -66,9 +68,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-auto bg-zinc-50">
-        {children}
-      </main>
+      <main className="flex-1 overflow-auto bg-zinc-50">{children}</main>
     </div>
   );
 }
