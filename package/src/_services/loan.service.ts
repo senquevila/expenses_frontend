@@ -2,10 +2,12 @@ import apiClient from "@/_libs/api/client";
 
 import {
   Loan,
+  LoanSummary,
   CreateLoanRequest,
   UpdateLoanRequest,
   LoansResponseSchema,
   LoanSchema,
+  LoanSummarySchema,
   ToggleResponseSchema,
 } from "@/_models/loan.model";
 
@@ -50,5 +52,10 @@ export const loanService = {
 
   async delete(id: number): Promise<void> {
     await apiClient.delete(`loans/${id}/`);
+  },
+
+  async getSummary(): Promise<LoanSummary> {
+    const response = await apiClient.get("loans/summary/");
+    return LoanSummarySchema.parse(response.data);
   },
 };

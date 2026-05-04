@@ -34,18 +34,27 @@ export function Loans() {
   const [filter, setFilter] = useState<"all" | "active">("active");
   const [open, setOpen] = useState(false);
   const [editingLoan, setEditingLoan] = useState<Loan | null>(null);
-  const { loans, loading, fetchAll, toggle } = useLoanStore();
+  const {
+    loans,
+    summary,
+    summaryLoading,
+    loading,
+    fetchAll,
+    fetchSummary,
+    toggle,
+  } = useLoanStore();
 
   useEffect(() => {
     fetchAll(true);
-  }, [fetchAll]);
+    fetchSummary();
+  }, [fetchAll, fetchSummary]);
 
   const filteredLoans =
     filter === "active" ? loans.filter((loan) => loan.is_active) : loans;
 
   return (
     <div className="p-8">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between items-center mb-4">
         <h1 className="text-3xl font-bold">Loans</h1>
         <Dialog.Root open={open} onOpenChange={setOpen}>
           <Dialog.Trigger asChild>
@@ -64,6 +73,36 @@ export function Loans() {
             </Dialog.Content>
           </Dialog.Portal>
         </Dialog.Root>
+      </div>
+
+      <div className="flex gap-8 mb-6 p-4 bg-white rounded-lg shadow-sm">
+        <div>
+          <p className="text-xs text-zinc-500 uppercase tracking-wide">
+            Remaining Debt
+          </p>
+          {summaryLoading || !summary ? (
+            <div className="h-7 w-24 bg-zinc-100 rounded animate-pulse mt-1" />
+          ) : (
+            <Money
+              value={summary.remaining}
+              className="text-xl font-bold text-zinc-900"
+            />
+          )}
+        </div>
+        <div className="w-px bg-zinc-100" />
+        <div>
+          <p className="text-xs text-zinc-500 uppercase tracking-wide">
+            Monthly Payment
+          </p>
+          {summaryLoading || !summary ? (
+            <div className="h-7 w-24 bg-zinc-100 rounded animate-pulse mt-1" />
+          ) : (
+            <Money
+              value={summary.monthly}
+              className="text-xl font-bold text-zinc-900"
+            />
+          )}
+        </div>
       </div>
 
       <Dialog.Root
