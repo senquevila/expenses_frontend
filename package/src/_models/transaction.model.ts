@@ -1,44 +1,57 @@
-import { z } from 'zod';
-import { AccountSchema } from '@/_models/account.model';
-import { PeriodSchema } from '@/_models/period.model';
-import { MoneySchema } from '@/_models/money.model';
+import { z } from "zod";
+import { AccountSchema } from "@/_models/account.model";
+import { PeriodSchema } from "@/_models/period.model";
+import { MoneySchema } from "@/_models/money.model";
 
 // Schemas
 export const TransactionSchema = z.object({
-    id: z.number().int().positive(),
-    period: PeriodSchema,
-    account: AccountSchema,
-    description: z.string().nullable(),
-    amount: MoneySchema,
-    local_amount: MoneySchema,
-    payment_date: z.string().refine((date) => !isNaN(Date.parse(date)), {
-        message: 'Invalid date format',
-    }),
-    created: z.string(),
-    modified: z.string(),
-    identifier: z.string().nullable(),
-    upload: z.unknown().nullable(),
+  id: z.number().int().positive(),
+  period: PeriodSchema,
+  account: AccountSchema,
+  description: z.string().nullable(),
+  amount: MoneySchema,
+  local_amount: MoneySchema,
+  payment_date: z.string().refine((date) => !isNaN(Date.parse(date)), {
+    message: "Invalid date format",
+  }),
+  created: z.string(),
+  modified: z.string().nullable(),
+  identifier: z.string().nullable(),
+  upload: z.unknown().nullable(),
 });
 
 export const TransactionsResponseSchema = z.object({
-    count: z.number(),
-    next: z.string().nullable(),
-    previous: z.string().nullable(),
-    results: z.array(TransactionSchema),
+  count: z.number(),
+  next: z.string().nullable(),
+  previous: z.string().nullable(),
+  results: z.array(TransactionSchema),
 });
 
-export const CreateTransactionRequestSchema = TransactionSchema.omit({ id: true, created: true, modified: true, period: true, account: true, local_amount: true }).extend({
-    period: z.number().int().positive(),
-    account: z.number().int().positive(),
-    amount: MoneySchema,
+export const CreateTransactionRequestSchema = TransactionSchema.omit({
+  id: true,
+  created: true,
+  modified: true,
+  period: true,
+  account: true,
+  local_amount: true,
+}).extend({
+  period: z.number().int().positive(),
+  account: z.number().int().positive(),
+  amount: MoneySchema,
 });
 
-export const UpdateTransactionRequestSchema = CreateTransactionRequestSchema.partial();
-
+export const UpdateTransactionRequestSchema =
+  CreateTransactionRequestSchema.partial();
 
 // Types
 export type Transaction = z.infer<typeof TransactionSchema>;
 
-export type CreateTransactionRequest = z.infer<typeof CreateTransactionRequestSchema>;
+export type TransactionsResponse = z.infer<typeof TransactionsResponseSchema>;
 
-export type UpdateTransactionRequest = z.infer<typeof UpdateTransactionRequestSchema>;
+export type CreateTransactionRequest = z.infer<
+  typeof CreateTransactionRequestSchema
+>;
+
+export type UpdateTransactionRequest = z.infer<
+  typeof UpdateTransactionRequestSchema
+>;
