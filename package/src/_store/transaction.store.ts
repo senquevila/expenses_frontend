@@ -14,6 +14,8 @@ interface TransactionState {
   error: string | null;
   page: number;
   totalCount: number;
+  pageSize: number;
+  totalPages: number;
   hasNext: boolean;
   hasPrevious: boolean;
 
@@ -27,12 +29,14 @@ interface TransactionState {
   remove: (id: number) => Promise<void>;
 }
 
-export const useTransactionStore = create<TransactionState>((set) => ({
+export const useTransactionStore = create<TransactionState>((set, get) => ({
   transactions: [],
   loading: false,
   error: null,
   page: 1,
   totalCount: 0,
+  pageSize: 20,
+  totalPages: 1,
   hasNext: false,
   hasPrevious: false,
 
@@ -40,9 +44,13 @@ export const useTransactionStore = create<TransactionState>((set) => ({
     set({ loading: true, error: null });
     try {
       const data = await transactionService.getAll(params);
+      const pageSize = data.next ? data.results.length : get().pageSize;
+      const totalPages = Math.ceil(data.count / pageSize) || 1;
       set({
         transactions: data.results,
         totalCount: data.count,
+        pageSize,
+        totalPages,
         hasNext: data.next !== null,
         hasPrevious: data.previous !== null,
         page: params?.page ?? 1,

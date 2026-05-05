@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, Pencil, Plus } from "lucide-react";
+import { Pencil, Plus } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { useEffect, useState } from "react";
 import { useTransactionStore } from "@/_store/transaction.store";
@@ -9,6 +9,7 @@ import { Period } from "@/_models/period.model";
 import { periodService } from "@/_services/period.service";
 import TransactionForm from "@/_shared/components/TransactionForm";
 import Money from "@/_shared/components/Money";
+import Pagination from "@/_shared/components/Pagination";
 
 const MONTH_NAMES = [
   "Jan",
@@ -32,8 +33,7 @@ export default function Transactions() {
   const fetchAll = useTransactionStore((s) => s.fetchAll);
   const page = useTransactionStore((s) => s.page);
   const totalCount = useTransactionStore((s) => s.totalCount);
-  const hasNext = useTransactionStore((s) => s.hasNext);
-  const hasPrevious = useTransactionStore((s) => s.hasPrevious);
+  const totalPages = useTransactionStore((s) => s.totalPages);
   const [open, setOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] =
     useState<Transaction | null>(null);
@@ -165,64 +165,55 @@ export default function Transactions() {
           {selectedYear}
         </div>
       ) : (
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <table className="w-full">
-            <thead className="bg-zinc-100 border-b">
-              <tr>
-                <th className="text-left px-6 py-3 font-semibold">Date</th>
-                <th className="text-left px-6 py-3 font-semibold">
-                  Description
-                </th>
-                <th className="text-left px-6 py-3 font-semibold">Account</th>
-                <th className="text-right px-6 py-3 font-semibold">Amount</th>
-                <th className="px-6 py-3" />
-              </tr>
-            </thead>
-            <tbody>
-              {transactions.map((transaction) => (
-                <tr key={transaction.id} className="border-b hover:bg-zinc-50">
-                  <td className="px-6 py-4">{transaction.payment_date}</td>
-                  <td className="px-6 py-4">{transaction.description}</td>
-                  <td className="px-6 py-4">{transaction.account.name}</td>
-                  <td className="px-6 py-4 text-right">
-                    <Money value={transaction.amount} />
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <button
-                      onClick={() => setEditingTransaction(transaction)}
-                      className="p-1.5 rounded hover:bg-zinc-100 transition-colors"
-                      aria-label="Edit transaction"
-                    >
-                      <Pencil className="size-4 text-zinc-500" />
-                    </button>
-                  </td>
+        <>
+          <div className="bg-white rounded-lg shadow overflow-hidden">
+            <table className="w-full">
+              <thead className="bg-zinc-100 border-b">
+                <tr>
+                  <th className="text-left px-6 py-3 font-semibold">Date</th>
+                  <th className="text-left px-6 py-3 font-semibold">
+                    Description
+                  </th>
+                  <th className="text-left px-6 py-3 font-semibold">Account</th>
+                  <th className="text-right px-6 py-3 font-semibold">Amount</th>
+                  <th className="px-6 py-3" />
                 </tr>
-              ))}
-            </tbody>
-          </table>
-          <div className="flex items-center justify-between px-6 py-3 border-t bg-zinc-50">
-            <span className="text-sm text-zinc-500">{totalCount} total</span>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => goToPage(page - 1)}
-                disabled={!hasPrevious}
-                className="p-1.5 rounded hover:bg-zinc-200 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                aria-label="Previous page"
-              >
-                <ChevronLeft className="size-4" />
-              </button>
-              <span className="text-sm text-zinc-700">Page {page}</span>
-              <button
-                onClick={() => goToPage(page + 1)}
-                disabled={!hasNext}
-                className="p-1.5 rounded hover:bg-zinc-200 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                aria-label="Next page"
-              >
-                <ChevronRight className="size-4" />
-              </button>
-            </div>
+              </thead>
+              <tbody>
+                {transactions.map((transaction) => (
+                  <tr
+                    key={transaction.id}
+                    className="border-b hover:bg-zinc-50"
+                  >
+                    <td className="px-6 py-4">{transaction.payment_date}</td>
+                    <td className="px-6 py-4">{transaction.description}</td>
+                    <td className="px-6 py-4">{transaction.account.name}</td>
+                    <td className="px-6 py-4 text-right">
+                      <Money value={transaction.amount} />
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <button
+                        onClick={() => setEditingTransaction(transaction)}
+                        className="p-1.5 rounded hover:bg-zinc-100 transition-colors"
+                        aria-label="Edit transaction"
+                      >
+                        <Pencil className="size-4 text-zinc-500" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        </div>
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            loading={loading}
+            onPageChange={goToPage}
+            count={totalCount}
+            itemLabel="transaction"
+          />
+        </>
       )}
     </div>
   );
