@@ -30,15 +30,20 @@ const UPLOAD_TYPE_METADATA = Object.fromEntries(
   UPLOAD_TYPES.map((t) => [t.value, { label: t.label, color: t.color }]),
 );
 
+function humanizeUploadType(value: string): string {
+  return value.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 function renderUploadType(uploadType: string | null): JSX.Element | string {
   if (!uploadType) return "—";
 
-  const uploadTypeMetadata = UPLOAD_TYPE_METADATA[uploadType];
+  const key = uploadType.toLowerCase();
+  const uploadTypeMetadata = UPLOAD_TYPE_METADATA[key];
   return (
     <span
       className={`px-2 py-0.5 rounded text-xs font-medium ${uploadTypeMetadata?.color ?? "bg-zinc-100 text-zinc-600"}`}
     >
-      {uploadTypeMetadata?.label ?? uploadType}
+      {uploadTypeMetadata?.label ?? humanizeUploadType(uploadType)}
     </span>
   );
 }
