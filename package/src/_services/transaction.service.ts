@@ -31,7 +31,7 @@ export const transactionService = {
 
   async getByUpload(uploadId: number): Promise<TransactionsResponse> {
     const response = await apiClient.get("transactions/", {
-      params: { upload: uploadId },
+      params: { upload: uploadId, ordering: "-created" },
     });
     return TransactionsResponseSchema.parse(response.data);
   },
