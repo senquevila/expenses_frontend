@@ -29,6 +29,7 @@ interface UploadStepTransformProps {
   rowStart: number;
   rowEnd: number;
   columnMap: ColumnMap;
+  savedColumnMaps?: Partial<Record<ColumnMapType, ColumnMap>>;
   onRowStartChange: (v: number) => void;
   onRowEndChange: (v: number) => void;
   onColumnMapChange: (map: ColumnMap) => void;
@@ -132,6 +133,7 @@ export default function UploadStepTransform({
   rowStart,
   rowEnd,
   columnMap,
+  savedColumnMaps,
   onRowStartChange,
   onRowEndChange,
   onColumnMapChange,
@@ -164,7 +166,7 @@ export default function UploadStepTransform({
   const goToPage = (p: number) => setPage(Math.max(1, Math.min(totalPages, p)));
 
   function handleTypeChange(newType: ColumnMapType) {
-    onColumnMapChange(DEFAULTS[newType]);
+    onColumnMapChange(savedColumnMaps?.[newType] ?? DEFAULTS[newType]);
   }
 
   function setNum(key: string, value: number) {

@@ -5,9 +5,45 @@ import Papa from "papaparse";
 import { Step1Upload } from "@/_models/upload.model";
 import { uploadService } from "@/_services/upload.service";
 import UploadStepUpload from "./upload/UploadStepUpload";
-import UploadStepTransform, { ColumnMap } from "./upload/UploadStepTransform";
+import UploadStepTransform, {
+  ColumnMap,
+  ColumnMapType,
+} from "./upload/UploadStepTransform";
 import UploadStepErrors from "./upload/UploadStepErrors";
 import UploadStepProcess from "./upload/UploadStepProcess";
+
+const PREFS_KEY = "upload_form_prefs";
+
+interface UploadFormPrefs {
+  rowStart: number;
+  rowEnd: number | null;
+  columnMaps: Partial<Record<ColumnMapType, ColumnMap>>;
+}
+
+function loadPrefs(): UploadFormPrefs {
+  try {
+    const raw = localStorage.getItem(PREFS_KEY);
+    if (raw)
+      return { rowStart: 0, rowEnd: null, columnMaps: {}, ...JSON.parse(raw) };
+  } catch {}
+  return { rowStart: 0, rowEnd: null, columnMaps: {} };
+}
+
+function savePrefs(prefs: UploadFormPrefs) {
+  try {
+    localStorage.setItem(PREFS_KEY, JSON.stringify(prefs));
+  } catch {}
+}
+
+function resolveInitialRowEnd(
+  savedRowEnd: number | null,
+  lastRow: number,
+): number {
+  if (savedRowEnd === null) return lastRow;
+  // A saved single-row selection at index 0 is often stale when a new file has more rows.
+  if (savedRowEnd === 0 && lastRow > 0) return lastRow;
+  return Math.min(savedRowEnd, lastRow);
+}
 
 const STEPS = ["Upload", "Transform", "Errors", "Transactions"] as const;
 type Step = 0 | 1 | 2 | 3;
@@ -37,14 +73,20 @@ export default function UploadForm({ onCancel }: UploadFormProps) {
   const [uploadResult, setUploadResult] = useState<Step1Upload | null>(null);
   const [parsedRows, setParsedRows] = useState<string[][]>([]);
 
-  const [rowStart, setRowStart] = useState(0);
+  const [prefs] = useState<UploadFormPrefs>(loadPrefs);
+  const [rowStart, setRowStart] = useState(() => prefs.rowStart);
   const [rowEnd, setRowEnd] = useState(0);
-  const [columnMap, setColumnMap] = useState<ColumnMap>({
-    uploadType: "credit_card",
-    date: 1,
-    description: 2,
-    local: 3,
-    usd: 4,
+  const [columnMap, setColumnMap] = useState<ColumnMap>(() => {
+    const saved = prefs.columnMaps["credit_card"];
+    return (
+      saved ?? {
+        uploadType: "credit_card",
+        date: 1,
+        description: 2,
+        local: 3,
+        usd: 4,
+      }
+    );
   });
 
   const handleStepOneNext = async () => {
@@ -61,7 +103,8 @@ export default function UploadForm({ onCancel }: UploadFormProps) {
       ]);
       setUploadResult(upload);
       setParsedRows(rows);
-      setRowEnd(rows.length - 1);
+      const lastRow = rows.length - 1;
+      setRowEnd(resolveInitialRowEnd(prefs.rowEnd, lastRow));
       setStep(1);
     } catch (e) {
       console.error("Step 1 failed:", e);
@@ -132,6 +175,11 @@ export default function UploadForm({ onCancel }: UploadFormProps) {
               },
             }));
       await uploadService.step2(uploadResult.id, result, columnMap.uploadType);
+      savePrefs({
+        rowStart,
+        rowEnd,
+        columnMaps: { ...prefs.columnMaps, [columnMap.uploadType]: columnMap },
+      });
       setApiError(null);
       setStep(2);
     } catch (e: unknown) {
@@ -227,6 +275,7 @@ export default function UploadForm({ onCancel }: UploadFormProps) {
           rowStart={rowStart}
           rowEnd={rowEnd}
           columnMap={columnMap}
+          savedColumnMaps={prefs.columnMaps}
           onRowStartChange={setRowStart}
           onRowEndChange={setRowEnd}
           onColumnMapChange={setColumnMap}
