@@ -40,16 +40,16 @@ export const transactionService = {
     id: number,
     data: UpdateTransactionRequest,
   ): Promise<Transaction> {
-    const response = await apiClient.put(`transactions/${id}/`, data);
-    return TransactionSchema.parse(response.data);
+    await apiClient.put(`transactions/${id}/`, data);
+    return transactionService.getById(id);
   },
 
   async patch(
     id: number,
     data: UpdateTransactionRequest,
   ): Promise<Transaction> {
-    const response = await apiClient.patch(`transactions/${id}/`, data);
-    return TransactionSchema.parse(response.data);
+    await apiClient.patch(`transactions/${id}/`, data);
+    return transactionService.getById(id);
   },
 
   async delete(id: number): Promise<void> {

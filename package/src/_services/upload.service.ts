@@ -41,6 +41,11 @@ export const uploadService = {
     return UploadSchema.parse(response.data);
   },
 
+  async getById(id: number): Promise<Upload> {
+    const response = await apiClient.get(`uploads/${id}/`);
+    return UploadSchema.parse(response.data);
+  },
+
   async step1(file: File): Promise<Step1Upload> {
     const formData = new FormData();
     formData.append("file", file);
@@ -50,9 +55,14 @@ export const uploadService = {
     return Step1UploadSchema.parse(response.data);
   },
 
-  async step2(id: number, result: unknown): Promise<Upload> {
+  async step2(
+    id: number,
+    result: unknown,
+    uploadType: string,
+  ): Promise<Upload> {
     const response = await apiClient.post(`uploads/${id}/step2/`, {
       result,
+      upload_type: uploadType.toUpperCase(),
       start_date: null,
       end_date: null,
     });

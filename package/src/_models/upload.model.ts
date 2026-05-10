@@ -7,30 +7,17 @@ export const UPLOAD_TYPES = [
 
 export type UploadTypeValue = (typeof UPLOAD_TYPES)[number]["value"];
 
-const DimensionSchema = z.object({
-  rows: z.number().int(),
-  cols: z.number().int(),
-});
-
-const ParametersSchema = z.object({
-  rows: z.object({
-    start: z.number().int(),
-    end: z.number().int(),
-  }),
-  cols: z.array(z.string()),
-});
-
 export const UploadSchema = z.object({
   id: z.number().int().positive(),
   created: z.string(),
   modified: z.string().nullable(),
   file: z.string().nullable(),
-  data: z.unknown().nullable(),
-  dimension: DimensionSchema.nullish(),
-  result: z.unknown().nullish(),
-  parameters: ParametersSchema.nullish(),
+  result: z.unknown().nullable(),
   start_date: z.string().nullable(),
   end_date: z.string().nullable(),
+  fails: z.unknown().nullable(),
+  upload_type: z.string().nullable(),
+  upload_status: z.string(),
 });
 
 export const UploadsResponseSchema = z.object({

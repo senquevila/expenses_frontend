@@ -16,6 +16,7 @@ export default function UploadStepProcess({
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<number | null>(null);
+  const [saved, setSaved] = useState<number | null>(null);
 
   useEffect(() => {
     fetchAll();
@@ -27,12 +28,17 @@ export default function UploadStepProcess({
   }, [uploadId, fetchAll]);
 
   const handleAccountChange = async (txId: number, accountId: number) => {
+    const current = transactions.find((t) => t.id === txId);
+    if (!current || current.account?.id === accountId) return;
+
     setSaving(txId);
     try {
       const updated = await transactionService.patch(txId, {
         account: accountId,
       });
       setTransactions((prev) => prev.map((t) => (t.id === txId ? updated : t)));
+      setSaved(txId);
+      setTimeout(() => setSaved((s) => (s === txId ? null : s)), 1500);
     } catch (e) {
       console.error("Failed to update account:", e);
     } finally {
@@ -85,7 +91,7 @@ export default function UploadStepProcess({
             {transactions.map((tx) => (
               <tr
                 key={tx.id}
-                className="border-b border-zinc-100 hover:bg-zinc-50"
+                className={`border-b border-zinc-100 transition-colors duration-500 ${saved === tx.id ? "bg-green-50" : "hover:bg-zinc-50"}`}
               >
                 <td className="px-3 py-2 whitespace-nowrap">
                   {tx.payment_date}

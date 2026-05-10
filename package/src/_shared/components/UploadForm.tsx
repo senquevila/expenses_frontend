@@ -6,10 +6,11 @@ import { Step1Upload } from "@/_models/upload.model";
 import { uploadService } from "@/_services/upload.service";
 import UploadStepUpload from "./upload/UploadStepUpload";
 import UploadStepTransform, { ColumnMap } from "./upload/UploadStepTransform";
+import UploadStepErrors from "./upload/UploadStepErrors";
 import UploadStepProcess from "./upload/UploadStepProcess";
 
-const STEPS = ["Upload", "Transform", "Process"] as const;
-type Step = 0 | 1 | 2;
+const STEPS = ["Upload", "Transform", "Errors", "Transactions"] as const;
+type Step = 0 | 1 | 2 | 3;
 
 interface UploadFormProps {
   onCancel?: () => void;
@@ -28,6 +29,7 @@ function parseCSV(file: File): Promise<string[][]> {
 export default function UploadForm({ onCancel }: UploadFormProps) {
   const [step, setStep] = useState<Step>(0);
   const [loading, setLoading] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
 
   const [file, setFile] = useState<File | null>(null);
   const [fileError, setFileError] = useState("");
@@ -71,6 +73,36 @@ export default function UploadForm({ onCancel }: UploadFormProps) {
 
   const handleStepTwoNext = async () => {
     if (!uploadResult) return;
+
+    const errors: string[] = [];
+    const colNums =
+      columnMap.uploadType === "credit_card"
+        ? [
+            columnMap.date,
+            columnMap.description,
+            columnMap.local,
+            columnMap.usd,
+          ]
+        : [
+            columnMap.date,
+            columnMap.description,
+            columnMap.debit,
+            columnMap.credit,
+          ];
+    if (colNums.some((n) => n < 1)) {
+      errors.push("All column numbers must be at least 1.");
+    }
+    if (columnMap.uploadType === "savings_account" && !columnMap.currency) {
+      errors.push("Please select a currency.");
+    }
+    if (rowEnd < rowStart) {
+      errors.push("End row must be greater than or equal to start row.");
+    }
+    if (errors.length > 0) {
+      setApiError(errors.join(" "));
+      return;
+    }
+
     setLoading(true);
     try {
       const dataRows = parsedRows.slice(rowStart, rowEnd + 1);
@@ -99,10 +131,19 @@ export default function UploadForm({ onCancel }: UploadFormProps) {
                 currency: columnMap.currency,
               },
             }));
-      await uploadService.step2(uploadResult.id, result);
+      await uploadService.step2(uploadResult.id, result, columnMap.uploadType);
+      setApiError(null);
       setStep(2);
-    } catch (e) {
-      console.error("Step 2 failed:", e);
+    } catch (e: unknown) {
+      const data = (e as { response?: { data?: unknown } })?.response?.data;
+      if (data && typeof data === "object") {
+        const msg = Object.entries(data as Record<string, string[]>)
+          .flatMap(([k, errs]) => errs.map((m) => `${k}: ${m}`))
+          .join(" · ");
+        setApiError(msg);
+      } else {
+        setApiError("Failed to process upload. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
@@ -120,7 +161,10 @@ export default function UploadForm({ onCancel }: UploadFormProps) {
     setStep((s) => (s + 1) as Step);
   };
 
-  const handleBack = () => setStep((s) => (s - 1) as Step);
+  const handleBack = () => {
+    setApiError(null);
+    setStep((s) => (s - 1) as Step);
+  };
 
   return (
     <div className="space-y-6">
@@ -190,7 +234,17 @@ export default function UploadForm({ onCancel }: UploadFormProps) {
       )}
 
       {step === 2 && uploadResult && (
+        <UploadStepErrors uploadId={uploadResult.id} />
+      )}
+
+      {step === 3 && uploadResult && (
         <UploadStepProcess uploadId={uploadResult.id} />
+      )}
+
+      {apiError && (
+        <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">
+          {apiError}
+        </p>
       )}
 
       {/* Actions */}
@@ -204,7 +258,7 @@ export default function UploadForm({ onCancel }: UploadFormProps) {
           {step === 0 ? "Cancel" : "Back"}
         </button>
 
-        {step < 2 ? (
+        {step < 3 ? (
           <button
             type="button"
             onClick={handleNext}

@@ -1,11 +1,12 @@
 "use client";
 
-import { Plus, Trash2 } from "lucide-react";
+import { List, Plus, Trash2 } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { useEffect, useState } from "react";
 import { useUploadStore } from "@/_store/upload.store";
 import { Upload } from "@/_models/upload.model";
 import UploadForm from "@/_shared/components/UploadForm";
+import UploadStepProcess from "@/_shared/components/upload/UploadStepProcess";
 import Pagination from "@/_shared/components/Pagination";
 
 function fileName(url: string | null): string {
@@ -18,24 +19,24 @@ function formatDate(date: string | null): string {
   return new Date(date).toLocaleDateString();
 }
 
-function parseSummary(
-  result: string | null,
-): { created: number; total: number } | null {
-  if (!result) return null;
-  try {
-    const parsed = JSON.parse(result);
-    const s = parsed?.summary;
-    if (s && typeof s.created === "number" && typeof s.total === "number")
-      return s;
-  } catch {}
-  return null;
-}
+const STATUS_STYLES: Record<string, string> = {
+  PENDING: "bg-yellow-100 text-yellow-800",
+  PROCESSING: "bg-blue-100 text-blue-800",
+  DONE: "bg-green-100 text-green-800",
+  FAILED: "bg-red-100 text-red-800",
+};
+
+const TYPE_LABELS: Record<string, string> = {
+  credit_card: "Credit card",
+  savings_account: "Savings account",
+};
 
 export default function Uploads() {
   const { uploads, count, page, totalPages, fetchPage, loading, remove } =
     useUploadStore();
   const [open, setOpen] = useState(false);
   const [confirmId, setConfirmId] = useState<number | null>(null);
+  const [selectedUpload, setSelectedUpload] = useState<Upload | null>(null);
 
   useEffect(() => {
     fetchPage(1);
@@ -81,10 +82,10 @@ export default function Uploads() {
           <thead className="bg-zinc-100 border-b">
             <tr>
               <th className="text-left px-6 py-3 font-semibold">File</th>
+              <th className="text-left px-6 py-3 font-semibold">Type</th>
+              <th className="text-left px-6 py-3 font-semibold">Status</th>
               <th className="text-left px-6 py-3 font-semibold">Start Date</th>
               <th className="text-left px-6 py-3 font-semibold">End Date</th>
-              <th className="text-center px-6 py-3 font-semibold">Rows</th>
-              <th className="text-center px-6 py-3 font-semibold">Result</th>
               <th className="text-left px-6 py-3 font-semibold">Created</th>
               <th className="px-6 py-3" />
             </tr>
@@ -97,53 +98,59 @@ export default function Uploads() {
                 </td>
               </tr>
             )}
-            {uploads.map((upload) => {
-              const summary = parseSummary(
-                typeof upload.result === "string" ? upload.result : null,
-              );
-              return (
-                <tr key={upload.id} className="border-b hover:bg-zinc-50">
-                  <td
-                    className="px-6 py-4 text-sm font-mono truncate max-w-xs"
-                    title={upload.file ?? ""}
+            {uploads.map((upload) => (
+              <tr key={upload.id} className="border-b hover:bg-zinc-50">
+                <td
+                  className="px-6 py-4 text-sm font-mono truncate max-w-xs"
+                  title={upload.file ?? ""}
+                >
+                  {fileName(upload.file)}
+                </td>
+                <td className="px-6 py-4 text-sm text-zinc-600">
+                  {upload.upload_type
+                    ? (TYPE_LABELS[upload.upload_type] ?? upload.upload_type)
+                    : "—"}
+                </td>
+                <td className="px-6 py-4">
+                  <span
+                    className={`px-2 py-0.5 rounded text-xs font-medium ${STATUS_STYLES[upload.upload_status] ?? "bg-zinc-100 text-zinc-600"}`}
                   >
-                    {fileName(upload.file)}
-                  </td>
-                  <td className="px-6 py-4">{formatDate(upload.start_date)}</td>
-                  <td className="px-6 py-4">{formatDate(upload.end_date)}</td>
-                  <td className="px-6 py-4 text-center">
-                    {upload.dimension?.rows ?? "—"}
-                  </td>
-                  <td className="px-6 py-4 text-center text-sm">
-                    {summary ? (
-                      <span className="text-green-700 font-medium">
-                        {summary.created}/{summary.total}
-                      </span>
-                    ) : (
-                      <span className="text-zinc-400">—</span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-zinc-500">
-                    {formatDate(upload.created)}
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    {confirmId === upload.id ? (
-                      <div className="flex items-center justify-end gap-2">
-                        <span className="text-sm text-zinc-500">Delete?</span>
+                    {upload.upload_status}
+                  </span>
+                </td>
+                <td className="px-6 py-4">{formatDate(upload.start_date)}</td>
+                <td className="px-6 py-4">{formatDate(upload.end_date)}</td>
+                <td className="px-6 py-4 text-sm text-zinc-500">
+                  {formatDate(upload.created)}
+                </td>
+                <td className="px-6 py-4 text-right">
+                  {confirmId === upload.id ? (
+                    <div className="flex items-center justify-end gap-2">
+                      <span className="text-sm text-zinc-500">Delete?</span>
+                      <button
+                        onClick={() => handleDelete(upload)}
+                        className="px-2 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+                      >
+                        Yes
+                      </button>
+                      <button
+                        onClick={() => setConfirmId(null)}
+                        className="px-2 py-1 text-sm bg-zinc-200 text-zinc-700 rounded hover:bg-zinc-300 transition-colors"
+                      >
+                        No
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-end gap-1">
+                      {upload.upload_status === "DONE" && (
                         <button
-                          onClick={() => handleDelete(upload)}
-                          className="px-2 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+                          onClick={() => setSelectedUpload(upload)}
+                          className="p-2 text-zinc-400 hover:text-zinc-700 transition-colors rounded"
+                          title="View transactions"
                         >
-                          Yes
+                          <List className="size-4" />
                         </button>
-                        <button
-                          onClick={() => setConfirmId(null)}
-                          className="px-2 py-1 text-sm bg-zinc-200 text-zinc-700 rounded hover:bg-zinc-300 transition-colors"
-                        >
-                          No
-                        </button>
-                      </div>
-                    ) : (
+                      )}
                       <button
                         onClick={() => setConfirmId(upload.id)}
                         className="p-2 text-zinc-400 hover:text-red-600 transition-colors rounded"
@@ -151,11 +158,11 @@ export default function Uploads() {
                       >
                         <Trash2 className="size-4" />
                       </button>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
+                    </div>
+                  )}
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
@@ -168,6 +175,23 @@ export default function Uploads() {
         count={count}
         itemLabel="upload"
       />
+
+      <Dialog.Root
+        open={!!selectedUpload}
+        onOpenChange={(o) => !o && setSelectedUpload(null)}
+      >
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 bg-black/40 z-40" />
+          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-full max-w-5xl -translate-x-1/2 -translate-y-1/2 rounded-lg bg-white p-6 shadow-lg">
+            <Dialog.Title className="text-xl font-semibold mb-4">
+              Transactions — {fileName(selectedUpload?.file ?? null)}
+            </Dialog.Title>
+            {selectedUpload && (
+              <UploadStepProcess uploadId={selectedUpload.id} />
+            )}
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
     </div>
   );
 }
