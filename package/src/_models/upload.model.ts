@@ -1,8 +1,16 @@
 import { z } from "zod";
 
 export const UPLOAD_TYPES = [
-  { value: "credit_card", label: "Credit card" },
-  { value: "savings_account", label: "Savings account" },
+  {
+    value: "credit_card",
+    label: "Credit card",
+    color: "bg-purple-100 text-purple-800",
+  },
+  {
+    value: "savings_account",
+    label: "Savings account",
+    color: "bg-teal-100 text-teal-800",
+  },
 ] as const;
 
 export type UploadTypeValue = (typeof UPLOAD_TYPES)[number]["value"];

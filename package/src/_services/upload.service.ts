@@ -16,7 +16,9 @@ export interface UploadPage {
 
 export const uploadService = {
   async getPage(page = 1): Promise<UploadPage> {
-    const response = await apiClient.get("uploads/", { params: { page } });
+    const response = await apiClient.get("uploads/", {
+      params: { page, ordering: "-created" },
+    });
     const raw = response.data;
     return {
       count: raw.count ?? 0,

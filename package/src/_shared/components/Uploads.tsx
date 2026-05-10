@@ -4,7 +4,7 @@ import { List, Plus, Trash2 } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { useEffect, useState } from "react";
 import { useUploadStore } from "@/_store/upload.store";
-import { Upload } from "@/_models/upload.model";
+import { Upload, UPLOAD_TYPES } from "@/_models/upload.model";
 import UploadForm from "@/_shared/components/UploadForm";
 import UploadStepProcess from "@/_shared/components/upload/UploadStepProcess";
 import Pagination from "@/_shared/components/Pagination";
@@ -26,10 +26,22 @@ const STATUS_STYLES: Record<string, string> = {
   FAILED: "bg-red-100 text-red-800",
 };
 
-const TYPE_LABELS: Record<string, string> = {
-  credit_card: "Credit card",
-  savings_account: "Savings account",
-};
+const UPLOAD_TYPE_METADATA = Object.fromEntries(
+  UPLOAD_TYPES.map((t) => [t.value, { label: t.label, color: t.color }]),
+);
+
+function renderUploadType(uploadType: string | null): JSX.Element | string {
+  if (!uploadType) return "—";
+
+  const uploadTypeMetadata = UPLOAD_TYPE_METADATA[uploadType];
+  return (
+    <span
+      className={`px-2 py-0.5 rounded text-xs font-medium ${uploadTypeMetadata?.color ?? "bg-zinc-100 text-zinc-600"}`}
+    >
+      {uploadTypeMetadata?.label ?? uploadType}
+    </span>
+  );
+}
 
 export default function Uploads() {
   const { uploads, count, page, totalPages, fetchPage, loading, remove } =
@@ -58,7 +70,13 @@ export default function Uploads() {
     <div className="p-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Uploads</h1>
-        <Dialog.Root open={open} onOpenChange={setOpen}>
+        <Dialog.Root
+          open={open}
+          onOpenChange={(o) => {
+            setOpen(o);
+            if (!o) fetchPage(page);
+          }}
+        >
           <Dialog.Trigger asChild>
             <button className="flex items-center gap-2 px-4 py-2 bg-zinc-900 text-white rounded-lg hover:bg-zinc-800 transition-colors">
               <Plus className="size-5" />
@@ -106,10 +124,8 @@ export default function Uploads() {
                 >
                   {fileName(upload.file)}
                 </td>
-                <td className="px-6 py-4 text-sm text-zinc-600">
-                  {upload.upload_type
-                    ? (TYPE_LABELS[upload.upload_type] ?? upload.upload_type)
-                    : "—"}
+                <td className="px-6 py-4">
+                  {renderUploadType(upload.upload_type)}
                 </td>
                 <td className="px-6 py-4">
                   <span
