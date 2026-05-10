@@ -51,7 +51,11 @@ export const uploadService = {
   },
 
   async step2(id: number, result: unknown): Promise<Upload> {
-    const response = await apiClient.post(`uploads/${id}/step2/`, { result });
+    const response = await apiClient.post(`uploads/${id}/step2/`, {
+      result,
+      start_date: null,
+      end_date: null,
+    });
     return UploadSchema.parse(response.data);
   },
 
