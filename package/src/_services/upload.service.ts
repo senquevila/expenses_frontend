@@ -1,6 +1,8 @@
 import apiClient from "@/_libs/api/client";
 import {
   Upload,
+  Step1Upload,
+  Step1UploadSchema,
   CreateUploadRequest,
   UploadSchema,
 } from "@/_models/upload.model";
@@ -27,7 +29,7 @@ export const uploadService = {
   async create(data: CreateUploadRequest): Promise<Upload> {
     const formData = new FormData();
     formData.append("file", data.file);
-    if (data.account_id) formData.append("account_id", String(data.account_id));
+    formData.append("upload_type", data.upload_type);
     if (data.row_start) formData.append("row_start", String(data.row_start));
     if (data.row_end) formData.append("row_end", String(data.row_end));
     if (data.start_date) formData.append("start_date", data.start_date);
@@ -36,6 +38,20 @@ export const uploadService = {
     const response = await apiClient.post("uploads/", formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
+    return UploadSchema.parse(response.data);
+  },
+
+  async step1(file: File): Promise<Step1Upload> {
+    const formData = new FormData();
+    formData.append("file", file);
+    const response = await apiClient.post("uploads/step1/", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return Step1UploadSchema.parse(response.data);
+  },
+
+  async step2(id: number, result: unknown): Promise<Upload> {
+    const response = await apiClient.post(`uploads/${id}/step2/`, { result });
     return UploadSchema.parse(response.data);
   },
 

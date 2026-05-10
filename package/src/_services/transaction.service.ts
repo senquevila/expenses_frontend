@@ -29,11 +29,26 @@ export const transactionService = {
     return TransactionSchema.parse(response.data);
   },
 
+  async getByUpload(uploadId: number): Promise<TransactionsResponse> {
+    const response = await apiClient.get("transactions/", {
+      params: { upload: uploadId },
+    });
+    return TransactionsResponseSchema.parse(response.data);
+  },
+
   async update(
     id: number,
     data: UpdateTransactionRequest,
   ): Promise<Transaction> {
     const response = await apiClient.put(`transactions/${id}/`, data);
+    return TransactionSchema.parse(response.data);
+  },
+
+  async patch(
+    id: number,
+    data: UpdateTransactionRequest,
+  ): Promise<Transaction> {
+    const response = await apiClient.patch(`transactions/${id}/`, data);
     return TransactionSchema.parse(response.data);
   },
 
