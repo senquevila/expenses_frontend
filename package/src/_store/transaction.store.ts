@@ -23,6 +23,7 @@ interface TransactionState {
     year?: number;
     month?: number;
     page?: number;
+    search?: string;
   }) => Promise<void>;
   add: (data: CreateTransactionRequest) => Promise<void>;
   edit: (id: number, data: UpdateTransactionRequest) => Promise<void>;

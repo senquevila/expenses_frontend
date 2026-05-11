@@ -1,6 +1,6 @@
 "use client";
 
-import { Pencil, Plus } from "lucide-react";
+import { Pencil, Plus, Search } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { useEffect, useState } from "react";
 import { useTransactionStore } from "@/_store/transaction.store";
@@ -27,7 +27,15 @@ const MONTH_NAMES = [
 ];
 const ALL_MONTHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 
-export default function Transactions() {
+interface TransactionsProps {
+  initialYear?: number;
+  initialMonth?: number;
+}
+
+export default function Transactions({
+  initialYear,
+  initialMonth,
+}: TransactionsProps) {
   const transactions = useTransactionStore((s) => s.transactions);
   const loading = useTransactionStore((s) => s.loading);
   const fetchAll = useTransactionStore((s) => s.fetchAll);
@@ -38,8 +46,19 @@ export default function Transactions() {
   const [editingTransaction, setEditingTransaction] =
     useState<Transaction | null>(null);
   const [periods, setPeriods] = useState<Period[]>([]);
-  const [selectedYear, setSelectedYear] = useState<number | "">("");
-  const [selectedMonth, setSelectedMonth] = useState<number | "">("");
+  const [selectedYear, setSelectedYear] = useState<number | "">(
+    initialYear ?? "",
+  );
+  const [selectedMonth, setSelectedMonth] = useState<number | "">(
+    initialMonth ?? "",
+  );
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchQuery), 400);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   useEffect(() => {
     periodService.getAll().then(setPeriods);
@@ -49,7 +68,8 @@ export default function Transactions() {
   const filterParams = {
     year: selectedYear || undefined,
     month: selectedMonth || undefined,
-  } as { year?: number; month?: number };
+    search: debouncedSearch || undefined,
+  } as { year?: number; month?: number; search?: string };
   const hasMatchingPeriod =
     selectedYear !== "" && selectedMonth !== ""
       ? periods.some(
@@ -59,17 +79,29 @@ export default function Transactions() {
 
   useEffect(() => {
     if (selectedYear === "" && selectedMonth === "") {
-      fetchAll();
+      fetchAll({ search: debouncedSearch || undefined });
       return;
     }
     if (selectedYear !== "" && selectedMonth !== "") {
       if (hasMatchingPeriod)
-        fetchAll({ year: selectedYear, month: selectedMonth });
+        fetchAll({
+          year: selectedYear,
+          month: selectedMonth,
+          search: debouncedSearch || undefined,
+        });
       return;
     }
-    if (selectedYear !== "") fetchAll({ year: selectedYear });
-    if (selectedMonth !== "") fetchAll({ month: selectedMonth });
-  }, [selectedYear, selectedMonth, fetchAll, hasMatchingPeriod]);
+    if (selectedYear !== "")
+      fetchAll({ year: selectedYear, search: debouncedSearch || undefined });
+    if (selectedMonth !== "")
+      fetchAll({ month: selectedMonth, search: debouncedSearch || undefined });
+  }, [
+    selectedYear,
+    selectedMonth,
+    debouncedSearch,
+    fetchAll,
+    hasMatchingPeriod,
+  ]);
 
   function goToPage(p: number) {
     fetchAll({ ...filterParams, page: p });
@@ -87,6 +119,16 @@ export default function Transactions() {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Transactions</h1>
         <div className="flex items-center gap-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-zinc-400 pointer-events-none" />
+            <input
+              type="text"
+              placeholder="Search..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 pr-3 py-2 border border-gray-300 rounded-md shadow-sm bg-white text-sm w-52"
+            />
+          </div>
           <select
             value={selectedYear}
             onChange={(e) =>

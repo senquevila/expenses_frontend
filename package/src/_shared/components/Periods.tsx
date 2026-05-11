@@ -1,23 +1,22 @@
 "use client";
 
-import { Plus } from "lucide-react";
+import { Plus, List } from "lucide-react";
 import * as Switch from "@radix-ui/react-switch";
 import * as Dialog from "@radix-ui/react-dialog";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { usePeriodStore } from "@/_store/period.store";
 import PeriodForm from "@/_shared/components/PeriodForm";
 import Money from "@/_shared/components/Money";
 
 export default function Periods() {
   const { periods, fetchAll, loading, toggle } = usePeriodStore();
-  const [filter, setFilter] = useState<"all" | "closed">("all");
   const [open, setOpen] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     fetchAll();
   }, [fetchAll]);
-
-  const filtered = filter === "closed" ? periods.filter((p) => p.closed) : periods;
 
   if (loading) return <div className="p-8">Loading...</div>;
 
@@ -35,7 +34,9 @@ export default function Periods() {
           <Dialog.Portal>
             <Dialog.Overlay className="fixed inset-0 bg-black/40 z-40" />
             <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-lg bg-white p-6 shadow-lg">
-              <Dialog.Title className="text-xl font-semibold mb-4">New Period</Dialog.Title>
+              <Dialog.Title className="text-xl font-semibold mb-4">
+                New Period
+              </Dialog.Title>
               <PeriodForm onCancel={() => setOpen(false)} />
             </Dialog.Content>
           </Dialog.Portal>
@@ -47,15 +48,32 @@ export default function Periods() {
             <tr>
               <th className="text-left px-6 py-3 font-semibold">Period</th>
               <th className="text-right px-6 py-3 font-semibold">Total</th>
+              <th className="px-6 py-3" />
               <th className="text-center px-6 py-3 font-semibold">Closed</th>
             </tr>
           </thead>
           <tbody>
-            {filtered.map((period) => (
+            {periods.map((period) => (
               <tr key={period.id} className="border-b hover:bg-zinc-50">
-                <td className="px-6 py-4">{period.year}-{String(period.month).padStart(2, '0')}</td>
+                <td className="px-6 py-4">
+                  {period.year}-{String(period.month).padStart(2, "0")}
+                </td>
                 <td className="px-6 py-4 text-right">
                   <Money value={period.total} />
+                </td>
+                <td className="px-6 py-4 text-center">
+                  <button
+                    onClick={() =>
+                      router.push(
+                        `/transactions?year=${period.year}&month=${period.month}`,
+                      )
+                    }
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm text-zinc-600 border border-zinc-200 rounded-md hover:bg-zinc-50 transition-colors"
+                    title="View transactions"
+                  >
+                    <List className="size-4" />
+                    Transactions
+                  </button>
                 </td>
                 <td className="px-6 py-4 text-center">
                   <Switch.Root

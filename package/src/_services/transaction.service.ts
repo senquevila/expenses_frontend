@@ -14,6 +14,7 @@ export const transactionService = {
     year?: number;
     month?: number;
     page?: number;
+    search?: string;
   }): Promise<TransactionsResponse> {
     const response = await apiClient.get("transactions/", { params });
     return TransactionsResponseSchema.parse(response.data);
