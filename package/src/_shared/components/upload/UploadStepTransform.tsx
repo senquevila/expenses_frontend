@@ -62,19 +62,19 @@ const DEFAULTS: Record<ColumnMapType, ColumnMap> = {
 
 const COL_COLORS = {
   date: {
-    bg: "bg-green-400",
-    cell: "bg-green-300 text-zinc-900",
-    header: "bg-green-400 text-zinc-900",
+    bg: "bg-blue-600",
+    cell: "bg-blue-600 text-white",
+    header: "bg-blue-700 text-white",
   },
   description: {
-    bg: "bg-orange-400",
-    cell: "bg-orange-400 text-white",
-    header: "bg-orange-500 text-white",
+    bg: "bg-orange-500",
+    cell: "bg-orange-500 text-white",
+    header: "bg-orange-600 text-white",
   },
   third: {
-    bg: "bg-yellow-300",
-    cell: "bg-yellow-300 text-zinc-900",
-    header: "bg-yellow-400 text-zinc-900",
+    bg: "bg-emerald-600",
+    cell: "bg-emerald-600 text-white",
+    header: "bg-emerald-700 text-white",
   },
   fourth: {
     bg: "bg-purple-600",
@@ -274,7 +274,7 @@ export default function UploadStepTransform({
             {/* Date */}
             <div>
               <label className="flex items-center gap-1.5 text-xs font-medium text-zinc-600 mb-1">
-                <span className="inline-block w-3 h-3 rounded-sm bg-green-400" />
+                <span className="inline-block w-3 h-3 rounded-sm bg-blue-600" />
                 Date
               </label>
               <input
@@ -289,7 +289,7 @@ export default function UploadStepTransform({
             {/* Description */}
             <div>
               <label className="flex items-center gap-1.5 text-xs font-medium text-zinc-600 mb-1">
-                <span className="inline-block w-3 h-3 rounded-sm bg-orange-400" />
+                <span className="inline-block w-3 h-3 rounded-sm bg-orange-500" />
                 Description
               </label>
               <input
@@ -304,7 +304,7 @@ export default function UploadStepTransform({
             {/* Third field: Local / Debit */}
             <div>
               <label className="flex items-center gap-1.5 text-xs font-medium text-zinc-600 mb-1">
-                <span className="inline-block w-3 h-3 rounded-sm bg-yellow-300" />
+                <span className="inline-block w-3 h-3 rounded-sm bg-emerald-600" />
                 {columnMap.uploadType === "credit_card" ? "Local" : "Debit"}
               </label>
               <input
