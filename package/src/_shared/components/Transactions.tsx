@@ -5,8 +5,6 @@ import * as Dialog from "@radix-ui/react-dialog";
 import { useEffect, useState } from "react";
 import { useTransactionStore } from "@/_store/transaction.store";
 import { Transaction } from "@/_models/transaction.model";
-import { Period } from "@/_models/period.model";
-import { periodService } from "@/_services/period.service";
 import TransactionForm from "@/_shared/components/TransactionForm";
 import Money from "@/_shared/components/Money";
 import Pagination from "@/_shared/components/Pagination";
@@ -30,11 +28,15 @@ const ALL_MONTHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 interface TransactionsProps {
   initialYear?: number;
   initialMonth?: number;
+  initialPeriod?: number;
+  initialAccount?: number;
 }
 
 export default function Transactions({
   initialYear,
   initialMonth,
+  initialPeriod,
+  initialAccount,
 }: TransactionsProps) {
   const transactions = useTransactionStore((s) => s.transactions);
   const loading = useTransactionStore((s) => s.loading);
@@ -45,7 +47,9 @@ export default function Transactions({
   const [open, setOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] =
     useState<Transaction | null>(null);
-  const [periods, setPeriods] = useState<Period[]>([]);
+  const [activePeriod, setActivePeriod] = useState<number | undefined>(
+    initialPeriod,
+  );
   const [selectedYear, setSelectedYear] = useState<number | "">(
     initialYear ?? "",
   );
@@ -60,57 +64,39 @@ export default function Transactions({
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  useEffect(() => {
-    periodService.getAll().then(setPeriods);
-    fetchAll();
-  }, [fetchAll]);
+  function handleYearChange(value: number | "") {
+    setActivePeriod(undefined);
+    setSelectedYear(value);
+  }
+
+  function handleMonthChange(value: number | "") {
+    setActivePeriod(undefined);
+    setSelectedMonth(value);
+  }
 
   const filterParams = {
-    year: selectedYear || undefined,
-    month: selectedMonth || undefined,
+    period: activePeriod,
+    account: initialAccount,
+    year: activePeriod ? undefined : selectedYear || undefined,
+    month: activePeriod ? undefined : selectedMonth || undefined,
     search: debouncedSearch || undefined,
-  } as { year?: number; month?: number; search?: string };
-  const hasMatchingPeriod =
-    selectedYear !== "" && selectedMonth !== ""
-      ? periods.some(
-          (p) => p.year === selectedYear && p.month === selectedMonth,
-        )
-      : false;
+  };
 
   useEffect(() => {
-    if (selectedYear === "" && selectedMonth === "") {
-      fetchAll({ search: debouncedSearch || undefined });
-      return;
-    }
-    if (selectedYear !== "" && selectedMonth !== "") {
-      if (hasMatchingPeriod)
-        fetchAll({
-          year: selectedYear,
-          month: selectedMonth,
-          search: debouncedSearch || undefined,
-        });
-      return;
-    }
-    if (selectedYear !== "")
-      fetchAll({ year: selectedYear, search: debouncedSearch || undefined });
-    if (selectedMonth !== "")
-      fetchAll({ month: selectedMonth, search: debouncedSearch || undefined });
+    fetchAll(filterParams);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
+    fetchAll,
+    activePeriod,
+    initialAccount,
     selectedYear,
     selectedMonth,
     debouncedSearch,
-    fetchAll,
-    hasMatchingPeriod,
   ]);
 
   function goToPage(p: number) {
     fetchAll({ ...filterParams, page: p });
   }
-
-  const years = [...new Set(periods.map((p) => p.year))].sort((a, b) => b - a);
-
-  const periodNotFound =
-    selectedYear !== "" && selectedMonth !== "" ? !hasMatchingPeriod : false;
 
   if (loading) return <div className="p-8">Loading...</div>;
 
@@ -129,38 +115,37 @@ export default function Transactions({
               className="pl-9 pr-3 py-2 border border-gray-300 rounded-md shadow-sm bg-white text-sm w-52"
             />
           </div>
-          <select
-            value={selectedYear}
-            onChange={(e) =>
-              setSelectedYear(
-                e.target.value === "" ? "" : Number(e.target.value),
-              )
-            }
-            className="border border-gray-300 rounded-md shadow-sm px-3 py-2 bg-white text-sm"
-          >
-            <option value="">All years</option>
-            {years.map((y) => (
-              <option key={y} value={y}>
-                {y}
-              </option>
-            ))}
-          </select>
-          <select
-            value={selectedMonth}
-            onChange={(e) =>
-              setSelectedMonth(
-                e.target.value === "" ? "" : Number(e.target.value),
-              )
-            }
-            className="border border-gray-300 rounded-md shadow-sm px-3 py-2 bg-white text-sm"
-          >
-            <option value="">All months</option>
-            {ALL_MONTHS.map((m) => (
-              <option key={m} value={m}>
-                {MONTH_NAMES[m - 1]}
-              </option>
-            ))}
-          </select>
+          {!activePeriod && (
+            <>
+              <input
+                type="number"
+                placeholder="Year"
+                value={selectedYear}
+                onChange={(e) =>
+                  handleYearChange(
+                    e.target.value === "" ? "" : Number(e.target.value),
+                  )
+                }
+                className="border border-gray-300 rounded-md shadow-sm px-3 py-2 bg-white text-sm w-24"
+              />
+              <select
+                value={selectedMonth}
+                onChange={(e) =>
+                  handleMonthChange(
+                    e.target.value === "" ? "" : Number(e.target.value),
+                  )
+                }
+                className="border border-gray-300 rounded-md shadow-sm px-3 py-2 bg-white text-sm"
+              >
+                <option value="">All months</option>
+                {ALL_MONTHS.map((m) => (
+                  <option key={m} value={m}>
+                    {MONTH_NAMES[m - 1]}
+                  </option>
+                ))}
+              </select>
+            </>
+          )}
           <Dialog.Root open={open} onOpenChange={setOpen}>
             <Dialog.Trigger asChild>
               <button className="flex items-center gap-2 px-4 py-2 bg-zinc-900 text-white rounded-lg hover:bg-zinc-800 transition-colors">
@@ -201,62 +186,48 @@ export default function Transactions({
         </Dialog.Portal>
       </Dialog.Root>
 
-      {periodNotFound ? (
-        <div className="bg-white rounded-lg shadow p-8 text-center text-zinc-500">
-          No period found for {MONTH_NAMES[(selectedMonth as number) - 1]}{" "}
-          {selectedYear}
-        </div>
-      ) : (
-        <>
-          <div className="bg-white rounded-lg shadow overflow-hidden">
-            <table className="w-full">
-              <thead className="bg-zinc-100 border-b">
-                <tr>
-                  <th className="text-left px-6 py-3 font-semibold">Date</th>
-                  <th className="text-left px-6 py-3 font-semibold">
-                    Description
-                  </th>
-                  <th className="text-left px-6 py-3 font-semibold">Account</th>
-                  <th className="text-right px-6 py-3 font-semibold">Amount</th>
-                  <th className="px-6 py-3" />
-                </tr>
-              </thead>
-              <tbody>
-                {transactions.map((transaction) => (
-                  <tr
-                    key={transaction.id}
-                    className="border-b hover:bg-zinc-50"
+      <div className="bg-white rounded-lg shadow overflow-hidden">
+        <table className="w-full">
+          <thead className="bg-zinc-100 border-b">
+            <tr>
+              <th className="text-left px-6 py-3 font-semibold">Date</th>
+              <th className="text-left px-6 py-3 font-semibold">Description</th>
+              <th className="text-left px-6 py-3 font-semibold">Account</th>
+              <th className="text-right px-6 py-3 font-semibold">Amount</th>
+              <th className="px-6 py-3" />
+            </tr>
+          </thead>
+          <tbody>
+            {transactions.map((transaction) => (
+              <tr key={transaction.id} className="border-b hover:bg-zinc-50">
+                <td className="px-6 py-4">{transaction.payment_date}</td>
+                <td className="px-6 py-4">{transaction.description}</td>
+                <td className="px-6 py-4">{transaction.account.name}</td>
+                <td className="px-6 py-4 text-right">
+                  <Money value={transaction.amount} />
+                </td>
+                <td className="px-6 py-4 text-right">
+                  <button
+                    onClick={() => setEditingTransaction(transaction)}
+                    className="p-1.5 rounded hover:bg-zinc-100 transition-colors"
+                    aria-label="Edit transaction"
                   >
-                    <td className="px-6 py-4">{transaction.payment_date}</td>
-                    <td className="px-6 py-4">{transaction.description}</td>
-                    <td className="px-6 py-4">{transaction.account.name}</td>
-                    <td className="px-6 py-4 text-right">
-                      <Money value={transaction.amount} />
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <button
-                        onClick={() => setEditingTransaction(transaction)}
-                        className="p-1.5 rounded hover:bg-zinc-100 transition-colors"
-                        aria-label="Edit transaction"
-                      >
-                        <Pencil className="size-4 text-zinc-500" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <Pagination
-            page={page}
-            totalPages={totalPages}
-            loading={loading}
-            onPageChange={goToPage}
-            count={totalCount}
-            itemLabel="transaction"
-          />
-        </>
-      )}
+                    <Pencil className="size-4 text-zinc-500" />
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        loading={loading}
+        onPageChange={goToPage}
+        count={totalCount}
+        itemLabel="transaction"
+      />
     </div>
   );
 }

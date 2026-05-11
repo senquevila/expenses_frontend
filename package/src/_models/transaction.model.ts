@@ -34,6 +34,8 @@ export const CreateTransactionRequestSchema = TransactionSchema.omit({
   period: true,
   account: true,
   local_amount: true,
+  identifier: true,
+  upload: true,
 }).extend({
   period: z.number().int().positive(),
   account: z.number().int().positive(),

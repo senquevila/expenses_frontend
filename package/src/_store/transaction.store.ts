@@ -1,12 +1,12 @@
 import { create } from "zustand";
 import { toast } from "sonner";
-
 import {
   Transaction,
   CreateTransactionRequest,
   UpdateTransactionRequest,
 } from "@/_models/transaction.model";
 import { transactionService } from "@/_services/transaction.service";
+import { parseApiError } from "@/_libs/api/error";
 
 interface TransactionState {
   transactions: Transaction[];
@@ -24,6 +24,8 @@ interface TransactionState {
     month?: number;
     page?: number;
     search?: string;
+    period?: number;
+    account?: number;
   }) => Promise<void>;
   add: (data: CreateTransactionRequest) => Promise<void>;
   edit: (id: number, data: UpdateTransactionRequest) => Promise<void>;
@@ -72,8 +74,9 @@ export const useTransactionStore = create<TransactionState>((set, get) => ({
         transactions: [...state.transactions, newTransaction],
       }));
       toast.success("Transaction created");
-    } catch {
+    } catch (error) {
       toast.error("Failed to add transaction");
+      throw error;
     } finally {
       set({ loading: false });
     }
@@ -89,8 +92,10 @@ export const useTransactionStore = create<TransactionState>((set, get) => ({
         ),
       }));
       toast.success("Transaction updated");
-    } catch {
-      toast.error("Failed to update transaction");
+    } catch (error) {
+      const details = parseApiError(error);
+      toast.error(details ?? "Failed to update transaction");
+      throw error;
     } finally {
       set({ loading: false });
     }
@@ -104,8 +109,9 @@ export const useTransactionStore = create<TransactionState>((set, get) => ({
         transactions: state.transactions.filter((t) => t.id !== id),
       }));
       toast.success("Transaction deleted");
-    } catch {
+    } catch (error) {
       toast.error("Failed to delete transaction");
+      throw error;
     } finally {
       set({ loading: false });
     }
