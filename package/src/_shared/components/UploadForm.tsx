@@ -209,11 +209,6 @@ export default function UploadForm({ onCancel }: UploadFormProps) {
     setStep((s) => (s + 1) as Step);
   };
 
-  const handleBack = () => {
-    setApiError(null);
-    setStep((s) => (s - 1) as Step);
-  };
-
   return (
     <div className="space-y-6">
       {/* Stepper */}
@@ -298,14 +293,17 @@ export default function UploadForm({ onCancel }: UploadFormProps) {
 
       {/* Actions */}
       <div className="flex justify-between pt-2">
-        <button
-          type="button"
-          onClick={step === 0 ? onCancel : handleBack}
-          disabled={loading}
-          className="px-4 py-2 bg-zinc-200 text-zinc-700 rounded-md hover:bg-zinc-300 transition-colors disabled:opacity-50"
-        >
-          {step === 0 ? "Cancel" : "Back"}
-        </button>
+        {step === 0 && (
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={loading}
+            className="px-4 py-2 bg-zinc-200 text-zinc-700 rounded-md hover:bg-zinc-300 transition-colors disabled:opacity-50"
+          >
+            Cancel
+          </button>
+        )}
+        {step > 0 && <div />}
 
         {step < 3 ? (
           <button
