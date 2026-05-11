@@ -124,6 +124,7 @@ export function createEntityStore<
             toast.success(
               `${label} marked as ${isActive ? "active" : "inactive"}`,
             );
+            await get().fetchSummary(true);
           } catch {
             toast.error(`Failed to update ${label.toLowerCase()}`);
           } finally {
