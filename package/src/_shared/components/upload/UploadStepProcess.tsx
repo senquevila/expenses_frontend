@@ -31,12 +31,15 @@ export default function UploadStepProcess({
     const current = transactions.find((t) => t.id === txId);
     if (!current || current.account?.id === accountId) return;
 
+    const newAccount = accounts.find((a) => a.id === accountId);
+    if (!newAccount) return;
+
     setSaving(txId);
     try {
-      const updated = await transactionService.patch(txId, {
-        account: accountId,
-      });
-      setTransactions((prev) => prev.map((t) => (t.id === txId ? updated : t)));
+      await transactionService.patch(txId, { account: accountId });
+      setTransactions((prev) =>
+        prev.map((t) => (t.id === txId ? { ...t, account: newAccount } : t)),
+      );
       setSaved(txId);
       setTimeout(() => setSaved((s) => (s === txId ? null : s)), 1500);
     } catch (e) {

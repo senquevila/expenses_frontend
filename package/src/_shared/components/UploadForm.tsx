@@ -52,10 +52,11 @@ interface UploadFormProps {
   onCancel?: () => void;
 }
 
-function parseCSV(file: File): Promise<string[][]> {
+function parseCSV(file: File, encoding = "windows-1252"): Promise<string[][]> {
   return new Promise((resolve, reject) => {
     Papa.parse<string[]>(file, {
       skipEmptyLines: true,
+      encoding,
       complete: (result) => resolve(result.data),
       error: (error) => reject(error),
     });
