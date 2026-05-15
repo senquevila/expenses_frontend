@@ -27,19 +27,15 @@ export const TransactionsResponseSchema = z.object({
   results: z.array(TransactionSchema),
 });
 
-export const CreateTransactionRequestSchema = TransactionSchema.omit({
-  id: true,
-  created: true,
-  modified: true,
-  period: true,
-  account: true,
-  local_amount: true,
-  identifier: true,
-  upload: true,
-}).extend({
+export const CreateTransactionRequestSchema = z.object({
   period: z.number().int().positive(),
   account: z.number().int().positive(),
-  amount: MoneySchema,
+  payment_date: z.string().refine((date) => !isNaN(Date.parse(date)), {
+    message: "Invalid date format",
+  }),
+  description: z.string().nullable(),
+  amount: z.number(),
+  currency: z.number().int().positive(),
 });
 
 export const UpdateTransactionRequestSchema =

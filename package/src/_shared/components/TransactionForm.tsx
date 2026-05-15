@@ -21,40 +21,38 @@ interface TransactionFormProps {
   transaction?: Transaction;
 }
 
-type FormValues =
-  import("@/_models/transaction.model").CreateTransactionRequest;
-type TransactionPayload = Pick<
-  FormValues,
-  "period" | "account" | "payment_date" | "description" | "amount"
->;
+type FormValues = {
+  period: number;
+  account: number;
+  payment_date: string;
+  description: string | null;
+  amount: number;
+  currency: number;
+};
 
 const today = new Date().toISOString().split("T")[0];
 
-function getDefaultValues(transaction?: Transaction): FormValues {
+function getDefaultValues(transaction?: Transaction): Partial<FormValues> {
   if (transaction) {
     return {
       payment_date: transaction.payment_date,
-      amount: transaction.amount,
+      amount: transaction.amount.value,
+      currency: 0, // resolved after currencies load
       description: transaction.description ?? "",
       period: transaction.period.id,
       account: transaction.account.id,
-      identifier: transaction.identifier,
-      upload: transaction.upload,
     };
   }
 
   return {
     payment_date: today,
-    amount: { value: 0, currency: "HNL" },
+    amount: 0,
+    currency: 0, // resolved after currencies load
     description: "",
-    period: undefined,
-    account: undefined,
-    identifier: null,
-    upload: null,
   };
 }
 
-function buildTransactionPayload(data: FormValues): TransactionPayload {
+function buildTransactionPayload(data: FormValues): FormValues {
   if (typeof data.period !== "number" || Number.isNaN(data.period)) {
     throw new Error("Please select a valid period.");
   }
@@ -68,6 +66,7 @@ function buildTransactionPayload(data: FormValues): TransactionPayload {
     payment_date: data.payment_date,
     description: data.description,
     amount: data.amount,
+    currency: data.currency,
   };
 }
 
@@ -91,6 +90,7 @@ export default function TransactionForm({
     setValue,
     getValues,
     reset,
+    watch,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(CreateTransactionRequestSchema),
@@ -124,23 +124,12 @@ export default function TransactionForm({
       setLoadingCurrencies(true);
       try {
         const data = await currencyService.getAll();
-        if (!isMounted) {
-          return;
-        }
-
+        if (!isMounted) return;
         setCurrencies(data);
-
-        const fallbackCurrencyAlpha3 = data[0]?.alpha3;
-
-        if (fallbackCurrencyAlpha3 && !getValues("amount.currency")) {
-          setValue("amount.currency", fallbackCurrencyAlpha3);
-        }
       } catch (error) {
         console.error("Failed to fetch currencies:", error);
       } finally {
-        if (isMounted) {
-          setLoadingCurrencies(false);
-        }
+        if (isMounted) setLoadingCurrencies(false);
       }
     };
 
@@ -149,7 +138,16 @@ export default function TransactionForm({
     return () => {
       isMounted = false;
     };
-  }, [getValues, setValue]);
+  }, []);
+
+  useEffect(() => {
+    if (currencies.length === 0) return;
+    if (getValues("currency")) return;
+    const match = transaction
+      ? currencies.find((c) => c.alpha3 === transaction.amount.currency)
+      : null;
+    setValue("currency", match?.id ?? currencies[0].id);
+  }, [currencies, transaction, getValues, setValue]);
 
   const onSubmit = async (data: FormValues) => {
     try {
@@ -181,6 +179,7 @@ export default function TransactionForm({
           </label>
           <select
             {...register("period", { valueAsNumber: true })}
+            value={watch("period") ?? ""}
             className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 bg-white"
             disabled={periods.length === 0}
           >
@@ -201,6 +200,7 @@ export default function TransactionForm({
           </label>
           <select
             {...register("account", { valueAsNumber: true })}
+            value={watch("account") ?? ""}
             className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 bg-white"
             disabled={accounts.length === 0}
           >
@@ -255,18 +255,19 @@ export default function TransactionForm({
             <input
               type="number"
               step="0.01"
-              {...register("amount.value", { valueAsNumber: true })}
+              {...register("amount", { valueAsNumber: true })}
               placeholder="Value"
               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
             />
             <select
-              {...register("amount.currency")}
+              {...register("currency", { valueAsNumber: true })}
+              value={watch("currency") ?? ""}
               className="mt-1 block w-48 border border-gray-300 rounded-md shadow-sm p-2 bg-white"
               disabled={loadingCurrencies || currencies.length === 0}
             >
               <option value="">Currency</option>
               {currencies.map((currency) => (
-                <option key={currency.id} value={currency.alpha3}>
+                <option key={currency.id} value={currency.id}>
                   {currency.alpha3}
                 </option>
               ))}
@@ -275,13 +276,12 @@ export default function TransactionForm({
           {errors.amount && (
             <p className="text-red-500 text-sm mt-1">{errors.amount.message}</p>
           )}
+          {errors.currency && (
+            <p className="text-red-500 text-sm mt-1">
+              {errors.currency.message}
+            </p>
+          )}
         </div>
-        {(errors.amount?.value?.message ||
-          errors.amount?.currency?.message) && (
-          <p className="text-red-500 text-sm mt-1">
-            {errors.amount?.value?.message || errors.amount?.currency?.message}
-          </p>
-        )}
         <div className="flex gap-2">
           <button
             type="submit"
