@@ -33,9 +33,10 @@ export const periodService = {
     return [...firstPage.results, ...remainingPages.flat()];
   },
 
-  async toggle(id: number): Promise<boolean> {
-    const response = await apiClient.post(`periods/${id}/toggle/`, {});
-    return response.data.closed;
+  async toggle(id: number): Promise<Period> {
+    await apiClient.post(`periods/${id}/toggle/`, {});
+    const updated = await apiClient.get(`periods/${id}/`);
+    return PeriodSchema.parse(updated.data);
   },
 
   async getById(id: number): Promise<Period> {

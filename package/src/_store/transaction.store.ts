@@ -8,6 +8,15 @@ import {
 import { transactionService } from "@/_services/transaction.service";
 import { parseApiError } from "@/_libs/api/error";
 
+type FetchParams = {
+  year?: number;
+  month?: number;
+  page?: number;
+  search?: string;
+  period?: number;
+  account?: number;
+};
+
 interface TransactionState {
   transactions: Transaction[];
   loading: boolean;
@@ -18,15 +27,9 @@ interface TransactionState {
   totalPages: number;
   hasNext: boolean;
   hasPrevious: boolean;
+  fetchParams: FetchParams;
 
-  fetchAll: (params?: {
-    year?: number;
-    month?: number;
-    page?: number;
-    search?: string;
-    period?: number;
-    account?: number;
-  }) => Promise<void>;
+  fetchAll: (params?: FetchParams) => Promise<void>;
   add: (data: CreateTransactionRequest) => Promise<void>;
   edit: (id: number, data: UpdateTransactionRequest) => Promise<void>;
   remove: (id: number) => Promise<void>;
@@ -42,9 +45,10 @@ export const useTransactionStore = create<TransactionState>((set, get) => ({
   totalPages: 1,
   hasNext: false,
   hasPrevious: false,
+  fetchParams: {},
 
   fetchAll: async (params) => {
-    set({ loading: true, error: null });
+    set({ loading: true, error: null, fetchParams: params ?? {} });
     try {
       const data = await transactionService.getAll(params);
       const pageSize = data.next ? data.results.length : get().pageSize;
@@ -85,13 +89,10 @@ export const useTransactionStore = create<TransactionState>((set, get) => ({
   edit: async (id, data) => {
     set({ loading: true, error: null });
     try {
-      const updatedTransaction = await transactionService.update(id, data);
-      set((state) => ({
-        transactions: state.transactions.map((t) =>
-          t.id === id ? updatedTransaction : t,
-        ),
-      }));
+      await transactionService.update(id, data);
       toast.success("Transaction updated");
+      const { fetchAll, fetchParams } = get();
+      await fetchAll(fetchParams);
     } catch (error) {
       const details = parseApiError(error);
       toast.error(details ?? "Failed to update transaction");

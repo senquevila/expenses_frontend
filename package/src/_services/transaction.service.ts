@@ -39,13 +39,8 @@ export const transactionService = {
     return TransactionsResponseSchema.parse(response.data);
   },
 
-  async update(
-    id: number,
-    data: UpdateTransactionRequest,
-  ): Promise<Transaction> {
+  async update(id: number, data: UpdateTransactionRequest): Promise<void> {
     await apiClient.put(`transactions/${id}/`, data);
-    const response = await apiClient.get(`transactions/${id}/`);
-    return TransactionSchema.parse(response.data);
   },
 
   async patch(id: number, data: UpdateTransactionRequest): Promise<void> {

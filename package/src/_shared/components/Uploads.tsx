@@ -2,7 +2,7 @@
 
 import { List, Plus, Trash2 } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useUploadStore } from "@/_store/upload.store";
 import { Upload, UPLOAD_TYPES } from "@/_models/upload.model";
 import UploadForm from "@/_shared/components/UploadForm";
@@ -34,7 +34,9 @@ function humanizeUploadType(value: string): string {
   return value.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-function renderUploadType(uploadType: string | null): JSX.Element | string {
+function renderUploadType(
+  uploadType: string | null,
+): React.ReactElement | string {
   if (!uploadType) return "—";
 
   const key = uploadType.toLowerCase();
