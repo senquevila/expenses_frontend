@@ -17,7 +17,12 @@ export const AssociationSchema = z.object({
   }),
 });
 
-export const AssociationsListSchema = z.array(AssociationSchema);
+export const AssociationsListSchema = z.object({
+  count: z.number(),
+  next: z.string().nullable(),
+  previous: z.string().nullable(),
+  results: z.array(AssociationSchema),
+});
 
 export type Association = z.infer<typeof AssociationSchema>;
 export type CreateAssociationRequest = z.infer<
