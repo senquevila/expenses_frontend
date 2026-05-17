@@ -12,7 +12,7 @@ type FetchParams = {
   year?: number;
   month?: number;
   page?: number;
-  search?: string;
+  description?: string;
   period?: number;
   account?: number;
 };

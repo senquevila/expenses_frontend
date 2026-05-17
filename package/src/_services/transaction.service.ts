@@ -14,7 +14,7 @@ export const transactionService = {
     year?: number;
     month?: number;
     page?: number;
-    search?: string;
+    description?: string;
     period?: number;
     account?: number;
   }): Promise<TransactionsResponse> {

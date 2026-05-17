@@ -24,6 +24,18 @@ const MONTH_NAMES = [
   "Dec",
 ];
 const ALL_MONTHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+const CURRENT_YEAR = new Date().getFullYear();
+const _parsedStartYear = Number(process.env.NEXT_PUBLIC_START_YEAR);
+const START_YEAR =
+  Number.isInteger(_parsedStartYear) &&
+  _parsedStartYear >= 1900 &&
+  _parsedStartYear <= CURRENT_YEAR
+    ? _parsedStartYear
+    : CURRENT_YEAR;
+const ALL_YEARS = Array.from(
+  { length: CURRENT_YEAR - START_YEAR + 1 },
+  (_, i) => CURRENT_YEAR - i,
+);
 
 interface TransactionsProps {
   initialYear?: number;
@@ -79,7 +91,7 @@ export default function Transactions({
     account: initialAccount,
     year: activePeriod ? undefined : selectedYear || undefined,
     month: activePeriod ? undefined : selectedMonth || undefined,
-    search: debouncedSearch || undefined,
+    description: debouncedSearch || undefined,
   };
 
   useEffect(() => {
@@ -117,17 +129,22 @@ export default function Transactions({
           </div>
           {!activePeriod && (
             <>
-              <input
-                type="number"
-                placeholder="Year"
+              <select
                 value={selectedYear}
                 onChange={(e) =>
                   handleYearChange(
                     e.target.value === "" ? "" : Number(e.target.value),
                   )
                 }
-                className="border border-gray-300 rounded-md shadow-sm px-3 py-2 bg-white text-sm w-24"
-              />
+                className="border border-gray-300 rounded-md shadow-sm px-3 py-2 bg-white text-sm"
+              >
+                <option value="">All years</option>
+                {ALL_YEARS.map((y) => (
+                  <option key={y} value={y}>
+                    {y}
+                  </option>
+                ))}
+              </select>
               <select
                 value={selectedMonth}
                 onChange={(e) =>
