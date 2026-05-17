@@ -10,6 +10,7 @@ import {
   Upload,
   CreditCard,
   RotateCcw,
+  Link2,
   Settings as SettingsIcon,
 } from "lucide-react";
 
@@ -24,6 +25,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     { path: "/uploads", label: "Uploads", icon: Upload },
     { path: "/loans", label: "Loans", icon: CreditCard },
     { path: "/subscriptions", label: "Subscriptions", icon: RotateCcw },
+    { path: "/associations", label: "Associations", icon: Link2 },
     { path: "/settings", label: "Settings", icon: SettingsIcon },
   ];
 

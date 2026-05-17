@@ -36,6 +36,7 @@ const ALL_YEARS = Array.from(
   { length: CURRENT_YEAR - START_YEAR + 1 },
   (_, i) => CURRENT_YEAR - i,
 );
+const DEBOUNCE_DELAY_MS = 400;
 
 interface TransactionsProps {
   initialYear?: number;
@@ -72,7 +73,10 @@ export default function Transactions({
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
   useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(searchQuery), 400);
+    const timer = setTimeout(
+      () => setDebouncedSearch(searchQuery),
+      DEBOUNCE_DELAY_MS,
+    );
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
