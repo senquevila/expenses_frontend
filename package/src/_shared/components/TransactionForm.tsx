@@ -181,7 +181,7 @@ export default function TransactionForm({
             {...register("period", { valueAsNumber: true })}
             value={watch("period") ?? ""}
             className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 bg-white"
-            disabled={periods.length === 0}
+            disabled={periods.length === 0 || !!transaction}
           >
             <option value="">Select period</option>
             {periods.map((period) => (
@@ -224,7 +224,8 @@ export default function TransactionForm({
           <input
             type="date"
             {...register("payment_date")}
-            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+            disabled={!!transaction}
+            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
           />
           {errors.payment_date && (
             <p className="text-red-500 text-sm mt-1">
@@ -257,13 +258,16 @@ export default function TransactionForm({
               step="0.01"
               {...register("amount", { valueAsNumber: true })}
               placeholder="Value"
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+              disabled={!!transaction}
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
             />
             <select
               {...register("currency", { valueAsNumber: true })}
               value={watch("currency") ?? ""}
               className="mt-1 block w-48 border border-gray-300 rounded-md shadow-sm p-2 bg-white"
-              disabled={loadingCurrencies || currencies.length === 0}
+              disabled={
+                loadingCurrencies || currencies.length === 0 || !!transaction
+              }
             >
               <option value="">Currency</option>
               {currencies.map((currency) => (
