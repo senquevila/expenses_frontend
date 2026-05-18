@@ -69,6 +69,9 @@ export function Loans() {
               <Dialog.Title className="text-xl font-semibold mb-4">
                 New Loan
               </Dialog.Title>
+              <Dialog.Description className="sr-only">
+                Fill in the details to add a new loan.
+              </Dialog.Description>
               <LoanForm onCancel={() => setOpen(false)} />
             </Dialog.Content>
           </Dialog.Portal>
@@ -115,6 +118,9 @@ export function Loans() {
             <Dialog.Title className="text-xl font-semibold mb-4">
               Edit Loan
             </Dialog.Title>
+            <Dialog.Description className="sr-only">
+              Update the details of this loan.
+            </Dialog.Description>
             {editingLoan && (
               <LoanForm
                 loan={editingLoan}

@@ -1,3 +1,4 @@
+import { z } from "zod";
 import apiClient from "@/_libs/api/client";
 
 import {
@@ -37,12 +38,13 @@ export const loanService = {
 
   async create(data: CreateLoanRequest): Promise<Loan> {
     const response = await apiClient.post("loans/", data);
-    return LoanSchema.parse(response.data);
+    const { id } = z.object({ id: z.number() }).parse(response.data);
+    return loanService.getById(id);
   },
 
   async update(id: number, data: UpdateLoanRequest): Promise<Loan> {
-    const response = await apiClient.put(`loans/${id}/`, data);
-    return LoanSchema.parse(response.data);
+    await apiClient.put(`loans/${id}/`, data);
+    return loanService.getById(id);
   },
 
   async toggle(id: number): Promise<boolean> {
