@@ -23,13 +23,16 @@ import {
   CartesianGrid,
   Legend,
 } from "recharts";
+import * as Dialog from "@radix-ui/react-dialog";
 import Money from "@/_shared/components/Money";
 import { periodService } from "@/_services/period.service";
 import { transactionService } from "@/_services/transaction.service";
 import { accountService } from "@/_services/account.service";
+import { uploadService } from "@/_services/upload.service";
 import { Period, PeriodSummaryItem } from "@/_models/period.model";
 import { Account } from "@/_models/account.model";
 import { Transaction } from "@/_models/transaction.model";
+import { Upload } from "@/_models/upload.model";
 
 const MONTH_NAMES = [
   "January",
@@ -77,6 +80,76 @@ interface PeriodData {
   transactions: Transaction[];
 }
 
+type UploadGap = { from: string; to: string; days: number };
+type IdentifierGaps = { identifier: string; gaps: UploadGap[] };
+
+function computeMissingGaps(uploads: Upload[], year: number): IdentifierGaps[] {
+  const now = new Date();
+  const byId = new Map<string, { start: Date; end: Date }[]>();
+
+  for (const u of uploads) {
+    if (!u.identifier || !u.start_date || !u.end_date) continue;
+    const start = new Date(u.start_date);
+    const end = new Date(u.end_date);
+    if (end.getFullYear() < year || start.getFullYear() > year) continue;
+    if (!byId.has(u.identifier)) byId.set(u.identifier, []);
+    byId.get(u.identifier)!.push({ start, end });
+  }
+
+  const result: IdentifierGaps[] = [];
+
+  for (const [id, ranges] of byId) {
+    ranges.sort((a, b) => a.start.getTime() - b.start.getTime());
+
+    // Merge overlapping ranges
+    const merged: { start: Date; end: Date }[] = [];
+    for (const r of ranges) {
+      if (merged.length === 0 || r.start > merged.at(-1)!.end) {
+        merged.push({ ...r });
+      } else if (r.end > merged.at(-1)!.end) {
+        merged.at(-1)!.end = r.end;
+      }
+    }
+
+    const gaps: UploadGap[] = [];
+
+    // Gaps between consecutive uploads
+    for (let i = 1; i < merged.length; i++) {
+      const gapStart = new Date(merged[i - 1].end);
+      gapStart.setDate(gapStart.getDate() + 1);
+      const days = Math.round(
+        (merged[i].start.getTime() - gapStart.getTime()) / 86400000,
+      );
+      if (days >= 15) {
+        gaps.push({
+          from: gapStart.toISOString().slice(0, 10),
+          to: merged[i].start.toISOString().slice(0, 10),
+          days,
+        });
+      }
+    }
+
+    // Gap from last upload to today
+    const lastEnd = merged.at(-1)!.end;
+    const daysSinceLast = Math.round(
+      (now.getTime() - lastEnd.getTime()) / 86400000,
+    );
+    if (daysSinceLast >= 15) {
+      const gapStart = new Date(lastEnd);
+      gapStart.setDate(gapStart.getDate() + 1);
+      gaps.push({
+        from: gapStart.toISOString().slice(0, 10),
+        to: now.toISOString().slice(0, 10),
+        days: daysSinceLast,
+      });
+    }
+
+    if (gaps.length > 0) result.push({ identifier: id, gaps });
+  }
+
+  return result;
+}
+
 export function Dashboard() {
   const [periods, setPeriods] = useState<Period[]>([]);
   const [idx, setIdx] = useState(-1);
@@ -87,6 +160,14 @@ export function Dashboard() {
     transactions: [],
   });
   const [loadedIdx, setLoadedIdx] = useState(-1);
+  const [uploadGaps, setUploadGaps] = useState<IdentifierGaps[]>([]);
+
+  useEffect(() => {
+    const year = new Date().getFullYear();
+    uploadService
+      .getAll()
+      .then((uploads) => setUploadGaps(computeMissingGaps(uploads, year)));
+  }, []);
 
   useEffect(() => {
     periodService.getAll().then((all) => {
@@ -292,7 +373,51 @@ export function Dashboard() {
   return (
     <div className="p-8 max-w-7xl mx-auto">
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-bold">Dashboard</h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-3xl font-bold">Dashboard</h1>
+          {uploadGaps.length > 0 && (
+            <Dialog.Root>
+              <Dialog.Trigger asChild>
+                <button className="text-xs font-medium text-amber-700 bg-amber-100 border border-amber-200 px-2.5 py-1 rounded-full hover:bg-amber-200 transition-colors">
+                  {uploadGaps.length} missing upload
+                  {uploadGaps.length > 1 ? "s" : ""}
+                </button>
+              </Dialog.Trigger>
+              <Dialog.Portal>
+                <Dialog.Overlay className="fixed inset-0 bg-black/40 z-40" />
+                <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-lg bg-white p-6 shadow-lg">
+                  <Dialog.Title className="text-base font-semibold mb-4">
+                    Missing Uploads — {new Date().getFullYear()}
+                  </Dialog.Title>
+                  <div className="space-y-4">
+                    {uploadGaps.map(({ identifier, gaps }) => (
+                      <div key={identifier}>
+                        <p className="text-sm font-medium text-zinc-800 mb-1.5">
+                          {identifier}
+                        </p>
+                        <div className="space-y-1">
+                          {gaps.map((gap, i) => (
+                            <div
+                              key={i}
+                              className="flex items-center gap-2 text-xs text-zinc-600"
+                            >
+                              <span className="font-mono">
+                                {gap.from} → {gap.to}
+                              </span>
+                              <span className="text-zinc-400">
+                                ({gap.days} days)
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </Dialog.Content>
+              </Dialog.Portal>
+            </Dialog.Root>
+          )}
+        </div>
         {period && (
           <div className="flex items-center gap-2 bg-white rounded-lg shadow-sm px-2 py-1.5">
             <button

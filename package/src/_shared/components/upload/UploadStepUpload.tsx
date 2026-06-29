@@ -6,17 +6,42 @@ interface UploadStepUploadProps {
   file: File | null;
   fileError: string;
   onFileChange: (file: File | null) => void;
+  identifier: string;
+  identifierOptions: string[];
+  onIdentifierChange: (value: string) => void;
 }
 
 export default function UploadStepUpload({
   file,
   fileError,
   onFileChange,
+  identifier,
+  identifierOptions,
+  onIdentifierChange,
 }: UploadStepUploadProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   return (
     <div className="space-y-4">
+      <div className="grid grid-cols-[6rem_1fr] items-center gap-3">
+        <label className="text-sm font-medium text-zinc-700">Identifier:</label>
+        <div>
+          <input
+            list="identifier-options"
+            value={identifier}
+            onChange={(e) => onIdentifierChange(e.target.value)}
+            maxLength={50}
+            placeholder="Select or type an identifier"
+            className="w-full rounded border border-zinc-300 px-3 py-1.5 text-sm text-zinc-700 focus:outline-none focus:ring-1 focus:ring-zinc-400"
+          />
+          <datalist id="identifier-options">
+            {identifierOptions.map((opt) => (
+              <option key={opt} value={opt} />
+            ))}
+          </datalist>
+        </div>
+      </div>
+
       <div className="grid grid-cols-[6rem_1fr] items-center gap-3">
         <label className="text-sm font-medium text-zinc-700">File:</label>
         <div>

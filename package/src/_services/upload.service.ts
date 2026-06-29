@@ -48,9 +48,15 @@ export const uploadService = {
     return UploadSchema.parse(response.data);
   },
 
-  async step1(file: File): Promise<Step1Upload> {
+  async getIdentifiers(): Promise<string[]> {
+    const response = await apiClient.get("uploads/identifiers/");
+    return response.data.identifiers ?? [];
+  },
+
+  async step1(file: File, identifier?: string): Promise<Step1Upload> {
     const formData = new FormData();
     formData.append("file", file);
+    if (identifier) formData.append("identifier", identifier);
     const response = await apiClient.post("uploads/step1/", formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
@@ -73,5 +79,17 @@ export const uploadService = {
 
   async delete(id: number): Promise<void> {
     await apiClient.delete(`uploads/${id}/`);
+  },
+
+  async getAll(): Promise<Upload[]> {
+    const all: Upload[] = [];
+    let page = 1;
+    for (;;) {
+      const res = await this.getPage(page);
+      all.push(...res.results);
+      if (!res.next) break;
+      page++;
+    }
+    return all;
   },
 };

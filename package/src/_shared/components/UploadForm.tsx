@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Papa from "papaparse";
 import { Step1Upload } from "@/_models/upload.model";
 import { uploadService } from "@/_services/upload.service";
@@ -70,6 +70,15 @@ export default function UploadForm({ onCancel }: UploadFormProps) {
 
   const [file, setFile] = useState<File | null>(null);
   const [fileError, setFileError] = useState("");
+  const [identifier, setIdentifier] = useState("");
+  const [identifierOptions, setIdentifierOptions] = useState<string[]>([]);
+
+  useEffect(() => {
+    uploadService
+      .getIdentifiers()
+      .then(setIdentifierOptions)
+      .catch(() => {});
+  }, []);
 
   const [uploadResult, setUploadResult] = useState<Step1Upload | null>(null);
   const [parsedRows, setParsedRows] = useState<string[][]>([]);
@@ -99,7 +108,7 @@ export default function UploadForm({ onCancel }: UploadFormProps) {
     setLoading(true);
     try {
       const [upload, rows] = await Promise.all([
-        uploadService.step1(file),
+        uploadService.step1(file, identifier || undefined),
         parseCSV(file),
       ]);
       setUploadResult(upload);
@@ -261,6 +270,9 @@ export default function UploadForm({ onCancel }: UploadFormProps) {
             setFile(f);
             setFileError("");
           }}
+          identifier={identifier}
+          identifierOptions={identifierOptions}
+          onIdentifierChange={setIdentifier}
         />
       )}
 

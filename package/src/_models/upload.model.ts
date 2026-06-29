@@ -26,6 +26,7 @@ export const UploadSchema = z.object({
   fails: z.unknown().nullable(),
   upload_type: z.string().nullable(),
   upload_status: z.string(),
+  identifier: z.string().nullable().optional(),
 });
 
 export const UploadsResponseSchema = z.object({

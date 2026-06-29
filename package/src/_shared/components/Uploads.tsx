@@ -107,6 +107,7 @@ export default function Uploads() {
           <thead className="bg-zinc-100 border-b">
             <tr>
               <th className="text-left px-6 py-3 font-semibold">File</th>
+              <th className="text-left px-6 py-3 font-semibold">Identifier</th>
               <th className="text-left px-6 py-3 font-semibold">Type</th>
               <th className="text-left px-6 py-3 font-semibold">Status</th>
               <th className="text-left px-6 py-3 font-semibold">Start Date</th>
@@ -118,7 +119,7 @@ export default function Uploads() {
           <tbody>
             {uploads.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-6 py-8 text-center text-zinc-400">
+                <td colSpan={8} className="px-6 py-8 text-center text-zinc-400">
                   No uploads yet.
                 </td>
               </tr>
@@ -130,6 +131,9 @@ export default function Uploads() {
                   title={upload.file ?? ""}
                 >
                   {fileName(upload.file)}
+                </td>
+                <td className="px-6 py-4 text-sm text-zinc-700">
+                  {upload.identifier ?? "—"}
                 </td>
                 <td className="px-6 py-4">
                   {renderUploadType(upload.upload_type)}
