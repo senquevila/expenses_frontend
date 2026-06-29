@@ -88,6 +88,7 @@ export function createEntityStore<
             const newItem = await service.create(data);
             set((state) => ({ items: [...state.items, newItem] }));
             toast.success(`${label} created`);
+            await get().fetchSummary(true);
           } catch (err) {
             console.error(`Failed to add ${label.toLowerCase()}:`, err);
             toast.error(`Failed to add ${label.toLowerCase()}`);
@@ -106,6 +107,7 @@ export function createEntityStore<
               ),
             }));
             toast.success(`${label} updated`);
+            await get().fetchSummary(true);
           } catch (err) {
             console.error(`Failed to update ${label.toLowerCase()}:`, err);
             toast.error(`Failed to update ${label.toLowerCase()}`);

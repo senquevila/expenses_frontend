@@ -37,15 +37,15 @@ export const subscriptionService = {
 
   async create(data: CreateSubscriptionRequest): Promise<Subscription> {
     const response = await apiClient.post("subscriptions/", data);
-    return SubscriptionSchema.parse(response.data);
+    return subscriptionService.getById(response.data.id);
   },
 
   async update(
     id: number,
     data: UpdateSubscriptionRequest,
   ): Promise<Subscription> {
-    const response = await apiClient.put(`subscriptions/${id}/`, data);
-    return SubscriptionSchema.parse(response.data);
+    await apiClient.put(`subscriptions/${id}/`, data);
+    return subscriptionService.getById(id);
   },
 
   async toggle(id: number): Promise<boolean> {

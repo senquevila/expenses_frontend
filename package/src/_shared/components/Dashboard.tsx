@@ -83,7 +83,11 @@ interface PeriodData {
 type UploadGap = { from: string; to: string; days: number };
 type IdentifierGaps = { identifier: string; gaps: UploadGap[] };
 
-function computeMissingGaps(uploads: Upload[], year: number): IdentifierGaps[] {
+function computeMissingGaps(
+  uploads: Upload[],
+  year: number,
+  periods: Period[],
+): IdentifierGaps[] {
   const now = new Date();
   const byId = new Map<string, { start: Date; end: Date }[]>();
 
@@ -144,7 +148,16 @@ function computeMissingGaps(uploads: Upload[], year: number): IdentifierGaps[] {
       });
     }
 
-    if (gaps.length > 0) result.push({ identifier: id, gaps });
+    const activePeriodGaps = gaps.filter((gap) =>
+      periods.some((p) => {
+        if (!p.active) return false;
+        const pStart = new Date(p.year, p.month - 1, 1);
+        const pEnd = new Date(p.year, p.month, 0);
+        return new Date(gap.from) <= pEnd && new Date(gap.to) >= pStart;
+      }),
+    );
+    if (activePeriodGaps.length > 0)
+      result.push({ identifier: id, gaps: activePeriodGaps });
   }
 
   return result;
@@ -160,14 +173,16 @@ export function Dashboard() {
     transactions: [],
   });
   const [loadedIdx, setLoadedIdx] = useState(-1);
-  const [uploadGaps, setUploadGaps] = useState<IdentifierGaps[]>([]);
+  const [uploads, setUploads] = useState<Upload[]>([]);
 
   useEffect(() => {
-    const year = new Date().getFullYear();
-    uploadService
-      .getAll()
-      .then((uploads) => setUploadGaps(computeMissingGaps(uploads, year)));
+    uploadService.getAll().then(setUploads);
   }, []);
+
+  const uploadGaps = useMemo(
+    () => computeMissingGaps(uploads, new Date().getFullYear(), periods),
+    [uploads, periods],
+  );
 
   useEffect(() => {
     periodService.getAll().then((all) => {
