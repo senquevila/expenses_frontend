@@ -100,6 +100,10 @@ export default function UploadForm({ onCancel }: UploadFormProps) {
   });
 
   const handleStepOneNext = async () => {
+    if (!identifier.trim()) {
+      setFileError("Please enter an identifier.");
+      return;
+    }
     if (!file) {
       setFileError("Please select a file.");
       return;

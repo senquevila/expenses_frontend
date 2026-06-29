@@ -19,6 +19,7 @@ export default function Associations() {
   const [selectedAccount, setSelectedAccount] = useState<number | "">("");
   const [tokenSearch, setTokenSearch] = useState("");
   const [debouncedToken, setDebouncedToken] = useState("");
+  const [showDuplicates, setShowDuplicates] = useState(false);
 
   useEffect(() => {
     fetchAccounts();
@@ -38,6 +39,21 @@ export default function Associations() {
       token: debouncedToken || undefined,
     });
   }, [fetchAll, selectedAccount, debouncedToken]);
+
+  const norm = (s: string) => s.toLowerCase().trim();
+  const tokens = associations.map((a) => a.token);
+  const duplicateTokens = new Set(
+    tokens.filter((t, i) =>
+      tokens.some(
+        (other, j) =>
+          i !== j &&
+          (norm(t).startsWith(norm(other)) || norm(other).startsWith(norm(t))),
+      ),
+    ),
+  );
+  const displayed = showDuplicates
+    ? associations.filter((a) => duplicateTokens.has(a.token))
+    : associations;
 
   return (
     <div className="p-8">
@@ -70,6 +86,12 @@ export default function Associations() {
               className="pl-9 pr-3 py-2 border border-gray-300 rounded-md shadow-sm bg-white text-sm w-44"
             />
           </div>
+          <button
+            onClick={() => setShowDuplicates((v) => !v)}
+            className={`px-3 py-2 rounded-md text-sm border transition-colors ${showDuplicates ? "bg-zinc-900 text-white border-zinc-900" : "bg-white text-zinc-700 border-gray-300 hover:bg-zinc-50"}`}
+          >
+            Duplicates
+          </button>
           <Dialog.Root open={createOpen} onOpenChange={setCreateOpen}>
             <Dialog.Trigger asChild>
               <button className="flex items-center gap-2 px-4 py-2 bg-zinc-900 text-white rounded-lg hover:bg-zinc-800 transition-colors">
@@ -123,7 +145,7 @@ export default function Associations() {
               </tr>
             </thead>
             <tbody>
-              {associations.length === 0 ? (
+              {displayed.length === 0 ? (
                 <tr>
                   <td
                     colSpan={3}
@@ -133,7 +155,7 @@ export default function Associations() {
                   </td>
                 </tr>
               ) : (
-                associations.map((association) => (
+                displayed.map((association) => (
                   <tr
                     key={association.id}
                     className="border-b hover:bg-zinc-50"

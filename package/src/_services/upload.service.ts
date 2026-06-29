@@ -15,9 +15,12 @@ export interface UploadPage {
 }
 
 export const uploadService = {
-  async getPage(page = 1): Promise<UploadPage> {
+  async getPage(
+    page = 1,
+    filters: { identifier?: string; upload_type?: string } = {},
+  ): Promise<UploadPage> {
     const response = await apiClient.get("uploads/", {
-      params: { page, ordering: "-created" },
+      params: { page, ordering: "-created", ...filters },
     });
     const raw = response.data;
     return {

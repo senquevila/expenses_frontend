@@ -1,6 +1,6 @@
 "use client";
 
-import { List, Plus, Trash2 } from "lucide-react";
+import { Check, ChevronsUpDown, List, Plus, Trash2 } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
 import React, { useEffect, useState } from "react";
 import { useUploadStore } from "@/_store/upload.store";
@@ -8,6 +8,16 @@ import { Upload, UPLOAD_TYPES } from "@/_models/upload.model";
 import UploadForm from "@/_shared/components/UploadForm";
 import UploadStepProcess from "@/_shared/components/upload/UploadStepProcess";
 import Pagination from "@/_shared/components/Pagination";
+import { uploadService } from "@/_services/upload.service";
+import { Popover, PopoverContent, PopoverTrigger } from "@/_libs/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/_libs/ui/command";
 
 function fileName(url: string | null): string {
   if (!url) return "—";
@@ -16,7 +26,7 @@ function fileName(url: string | null): string {
 
 function formatDate(date: string | null): string {
   if (!date) return "—";
-  return new Date(date).toLocaleDateString();
+  return date.slice(0, 10);
 }
 
 const STATUS_STYLES: Record<string, string> = {
@@ -51,14 +61,29 @@ function renderUploadType(
 }
 
 export default function Uploads() {
-  const { uploads, count, page, totalPages, fetchPage, loading, remove } =
-    useUploadStore();
+  const {
+    uploads,
+    count,
+    page,
+    totalPages,
+    fetchPage,
+    loading,
+    remove,
+    filters,
+    setFilters,
+  } = useUploadStore();
   const [open, setOpen] = useState(false);
   const [confirmId, setConfirmId] = useState<number | null>(null);
   const [selectedUpload, setSelectedUpload] = useState<Upload | null>(null);
+  const [identifiers, setIdentifiers] = useState<string[]>([]);
+  const [identifierOpen, setIdentifierOpen] = useState(false);
 
   useEffect(() => {
     fetchPage(1);
+    uploadService
+      .getIdentifiers()
+      .then(setIdentifiers)
+      .catch(() => {});
   }, [fetchPage]);
 
   const handleDelete = async (upload: Upload) => {
@@ -100,6 +125,83 @@ export default function Uploads() {
             </Dialog.Content>
           </Dialog.Portal>
         </Dialog.Root>
+      </div>
+
+      <div className="flex items-center gap-3 mb-4">
+        <Popover open={identifierOpen} onOpenChange={setIdentifierOpen}>
+          <PopoverTrigger asChild>
+            <button className="flex items-center gap-2 px-3 py-2 border rounded-lg text-sm bg-white hover:bg-zinc-50 min-w-[180px] justify-between">
+              <span
+                className={
+                  filters.identifier ? "text-zinc-900" : "text-zinc-400"
+                }
+              >
+                {filters.identifier ?? "Identifier…"}
+              </span>
+              <ChevronsUpDown className="size-4 text-zinc-400" />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-[220px] p-0" align="start">
+            <Command>
+              <CommandInput placeholder="Search identifier…" />
+              <CommandList>
+                <CommandEmpty>No identifiers found.</CommandEmpty>
+                <CommandGroup>
+                  {filters.identifier && (
+                    <CommandItem
+                      value=""
+                      onSelect={() => {
+                        setFilters({ ...filters, identifier: undefined });
+                        setIdentifierOpen(false);
+                      }}
+                    >
+                      <span className="text-zinc-400">Clear filter</span>
+                    </CommandItem>
+                  )}
+                  {identifiers.map((id) => (
+                    <CommandItem
+                      key={id}
+                      value={id}
+                      onSelect={() => {
+                        setFilters({ ...filters, identifier: id });
+                        setIdentifierOpen(false);
+                      }}
+                    >
+                      <Check
+                        className={`size-4 ${filters.identifier === id ? "opacity-100" : "opacity-0"}`}
+                      />
+                      {id}
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </CommandList>
+            </Command>
+          </PopoverContent>
+        </Popover>
+
+        <select
+          value={filters.upload_type ?? ""}
+          onChange={(e) =>
+            setFilters({ ...filters, upload_type: e.target.value || undefined })
+          }
+          className="px-3 py-2 border rounded-lg text-sm bg-white hover:bg-zinc-50 text-zinc-700"
+        >
+          <option value="">All types</option>
+          {UPLOAD_TYPES.map((t) => (
+            <option key={t.value} value={t.value}>
+              {t.label}
+            </option>
+          ))}
+        </select>
+
+        {(filters.identifier || filters.upload_type) && (
+          <button
+            onClick={() => setFilters({})}
+            className="text-sm text-zinc-400 hover:text-zinc-700 transition-colors"
+          >
+            Clear all
+          </button>
+        )}
       </div>
 
       <div className="bg-white rounded-lg shadow overflow-hidden">

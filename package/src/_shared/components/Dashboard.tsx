@@ -7,6 +7,7 @@ import {
   TrendingDown,
   TrendingUp,
   Minus,
+  RefreshCw,
 } from "lucide-react";
 import {
   BarChart,
@@ -83,6 +84,18 @@ interface PeriodData {
 type UploadGap = { from: string; to: string; days: number };
 type IdentifierGaps = { identifier: string; gaps: UploadGap[] };
 
+function parseLocalDate(s: string): Date {
+  const [y, m, d] = s.split("-").map(Number);
+  return new Date(y, m - 1, d);
+}
+
+function formatLocalDate(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 function computeMissingGaps(
   uploads: Upload[],
   year: number,
@@ -90,24 +103,30 @@ function computeMissingGaps(
 ): IdentifierGaps[] {
   const now = new Date();
   const byId = new Map<string, { start: Date; end: Date }[]>();
+  const anonymous: { start: Date; end: Date }[] = [];
 
   for (const u of uploads) {
-    if (!u.identifier || !u.start_date || !u.end_date) continue;
-    const start = new Date(u.start_date);
-    const end = new Date(u.end_date);
+    if (!u.start_date || !u.end_date) continue;
+    const start = parseLocalDate(u.start_date);
+    const end = parseLocalDate(u.end_date);
     if (end.getFullYear() < year || start.getFullYear() > year) continue;
-    if (!byId.has(u.identifier)) byId.set(u.identifier, []);
-    byId.get(u.identifier)!.push({ start, end });
+    if (u.identifier) {
+      if (!byId.has(u.identifier)) byId.set(u.identifier, []);
+      byId.get(u.identifier)!.push({ start, end });
+    } else {
+      anonymous.push({ start, end });
+    }
   }
 
   const result: IdentifierGaps[] = [];
 
   for (const [id, ranges] of byId) {
-    ranges.sort((a, b) => a.start.getTime() - b.start.getTime());
+    const allRanges = [...ranges, ...anonymous];
+    allRanges.sort((a, b) => a.start.getTime() - b.start.getTime());
 
     // Merge overlapping ranges
     const merged: { start: Date; end: Date }[] = [];
-    for (const r of ranges) {
+    for (const r of allRanges) {
       if (merged.length === 0 || r.start > merged.at(-1)!.end) {
         merged.push({ ...r });
       } else if (r.end > merged.at(-1)!.end) {
@@ -126,8 +145,8 @@ function computeMissingGaps(
       );
       if (days >= 15) {
         gaps.push({
-          from: gapStart.toISOString().slice(0, 10),
-          to: merged[i].start.toISOString().slice(0, 10),
+          from: formatLocalDate(gapStart),
+          to: formatLocalDate(merged[i].start),
           days,
         });
       }
@@ -142,18 +161,20 @@ function computeMissingGaps(
       const gapStart = new Date(lastEnd);
       gapStart.setDate(gapStart.getDate() + 1);
       gaps.push({
-        from: gapStart.toISOString().slice(0, 10),
-        to: now.toISOString().slice(0, 10),
+        from: formatLocalDate(gapStart),
+        to: formatLocalDate(now),
         days: daysSinceLast,
       });
     }
 
     const activePeriodGaps = gaps.filter((gap) =>
       periods.some((p) => {
-        if (!p.active) return false;
+        if (!p.active || p.closed) return false;
         const pStart = new Date(p.year, p.month - 1, 1);
         const pEnd = new Date(p.year, p.month, 0);
-        return new Date(gap.from) <= pEnd && new Date(gap.to) >= pStart;
+        return (
+          parseLocalDate(gap.from) <= pEnd && parseLocalDate(gap.to) >= pStart
+        );
       }),
     );
     if (activePeriodGaps.length > 0)
@@ -174,9 +195,21 @@ export function Dashboard() {
   });
   const [loadedIdx, setLoadedIdx] = useState(-1);
   const [uploads, setUploads] = useState<Upload[]>([]);
+  const [uploadsRefreshing, setUploadsRefreshing] = useState(true);
+
+  const refreshUploads = () => {
+    setUploadsRefreshing(true);
+    uploadService
+      .getAll()
+      .then(setUploads)
+      .finally(() => setUploadsRefreshing(false));
+  };
 
   useEffect(() => {
-    uploadService.getAll().then(setUploads);
+    uploadService
+      .getAll()
+      .then(setUploads)
+      .finally(() => setUploadsRefreshing(false));
   }, []);
 
   const uploadGaps = useMemo(
@@ -401,9 +434,21 @@ export function Dashboard() {
               <Dialog.Portal>
                 <Dialog.Overlay className="fixed inset-0 bg-black/40 z-40" />
                 <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-lg bg-white p-6 shadow-lg">
-                  <Dialog.Title className="text-base font-semibold mb-4">
-                    Missing Uploads — {new Date().getFullYear()}
-                  </Dialog.Title>
+                  <div className="flex items-center justify-between mb-4">
+                    <Dialog.Title className="text-base font-semibold">
+                      Missing Uploads — {new Date().getFullYear()}
+                    </Dialog.Title>
+                    <button
+                      onClick={refreshUploads}
+                      disabled={uploadsRefreshing}
+                      className="p-1.5 rounded hover:bg-zinc-100 disabled:opacity-40 transition-colors"
+                      title="Refresh"
+                    >
+                      <RefreshCw
+                        className={`size-4 text-zinc-500 ${uploadsRefreshing ? "animate-spin" : ""}`}
+                      />
+                    </button>
+                  </div>
                   <div className="space-y-4">
                     {uploadGaps.map(({ identifier, gaps }) => (
                       <div key={identifier}>

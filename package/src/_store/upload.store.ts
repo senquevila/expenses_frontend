@@ -30,6 +30,11 @@ function getUploadErrorMessage(
   return "Failed to create upload";
 }
 
+interface UploadFilters {
+  identifier?: string;
+  upload_type?: string;
+}
+
 interface UploadState {
   uploads: Upload[];
   count: number;
@@ -37,8 +42,10 @@ interface UploadState {
   pageSize: number;
   totalPages: number;
   loading: boolean;
+  filters: UploadFilters;
 
   fetchPage: (page?: number) => Promise<void>;
+  setFilters: (filters: UploadFilters) => Promise<void>;
   add: (data: CreateUploadRequest) => Promise<void>;
   remove: (id: number) => Promise<void>;
 }
@@ -50,11 +57,12 @@ export const useUploadStore = create<UploadState>((set, get) => ({
   pageSize: 10,
   totalPages: 1,
   loading: false,
+  filters: {},
 
   fetchPage: async (page = 1) => {
     set({ loading: true });
     try {
-      const data = await uploadService.getPage(page);
+      const data = await uploadService.getPage(page, get().filters);
       const pageSize = data.next ? data.results.length : get().pageSize;
       const totalPages = Math.ceil(data.count / pageSize) || 1;
       set({
@@ -69,6 +77,11 @@ export const useUploadStore = create<UploadState>((set, get) => ({
     } finally {
       set({ loading: false });
     }
+  },
+
+  setFilters: async (filters) => {
+    set({ filters });
+    await get().fetchPage(1);
   },
 
   add: async (data) => {
